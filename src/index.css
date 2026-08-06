@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #2563EB;
+  --color-primary-light: #3B82F6;
+  --color-surface: #F8FAFC;
+  --color-surface-hover: #F1F5F9;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-slate-50, #f8fafc);
+    color: var(--color-slate-900, #0f172a);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
+}
