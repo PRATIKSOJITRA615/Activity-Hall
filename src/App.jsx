@@ -244,9 +244,9 @@ export default function App() {
       return null;
     }).filter(Boolean);
 
+    setPreviewModal(null);
     await saveEventAndAssignments(newEvent, flat, updatedMembers);
     setSelectedEventId(newEventId);
-    setPreviewModal(null);
     showToast(`${newEvent.eventName} seats saved`);
   };
 
