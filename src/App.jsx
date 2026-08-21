@@ -400,10 +400,17 @@ export default function App() {
       {/* --------------- Sidebar --------------- */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col no-print transition-transform duration-300 lg:static lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-200 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
             <Armchair size={16} className="text-white" />
           </div>
-          <span className="font-display font-bold text-[15px] tracking-tight">Seat Rotation</span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-display font-extrabold text-[12px] text-slate-900 leading-tight uppercase tracking-tight truncate">
+              Sanjeevkumar
+            </span>
+            <span className="font-display font-bold text-[8px] text-indigo-600 tracking-[0.25em] uppercase mt-0.5">
+              Auditorium
+            </span>
+          </div>
           <button
             className="lg:hidden ml-auto text-slate-400 hover:text-slate-600"
             onClick={() => setIsMobileMenuOpen(false)}
