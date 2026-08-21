@@ -397,7 +397,7 @@ export default function App() {
         />
       )}
 
-      {/* --------------- Sidebar --------------- */}
+      {/*  Sidebar  */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col no-print transition-transform duration-300 lg:static lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-200 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
@@ -453,7 +453,7 @@ export default function App() {
         </div>
       </aside>
 
-      {/* ---------------- Main ---------------- */}
+      {/*  Main  */}
       <main className="flex-1 min-w-0 print-area flex flex-col">
         <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 lg:px-8 no-print sticky top-0 z-30 shrink-0">
           <div className="flex items-center gap-3">
@@ -532,7 +532,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* ---------------- Modals ---------------- */}
+      {/*  Modals  */}
       {showAddModal && (
         <AddMemberModal onClose={() => setShowAddModal(false)} onSubmit={addMember} structures={structures} members={members} />
       )}
@@ -586,9 +586,9 @@ export default function App() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Dashboard page                                                      */
-/* ------------------------------------------------------------------ */
+
+/*  Dashboard page */
+
 
 function Dashboard({ activeDeluxe, activePremium, structures, eventsCount, lastEvent, onGoto }) {
   return (
@@ -653,9 +653,9 @@ function QuickAction({ icon: Icon, title, desc, cta, onClick }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Members page                                                        */
-/* ------------------------------------------------------------------ */
+
+/*  Members page */
+
 
 function MembersPage({
   members, structures, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter,
@@ -871,11 +871,7 @@ function SeatMapPage({ events, assignments, structures, selectedEventId, setSele
   );
 }
 
-// A single pyramid: row B (narrowest) sits right behind the stage, and each
-// row after it — through Deluxe's F and into Premium's G–L — gets wider,
-// ending at row L (widest, back of the hall). Every row shares one fixed-width
-// frame (sized to the widest row) so the shared scrollbar stays aligned across
-// rows, and the row letter stays pinned to the left edge while you scroll.
+
 const SEAT_SLOT = 40; // px reserved per seat (badge + gap)
 const ROW_LABEL_W = 26;
 const COUNT_LABEL_W = 30;
