@@ -36,9 +36,9 @@ import {
 import { buildSeatStructure, computePreview } from "./lib/rotation-engine";
 import seatIcon from "./assets/icon.png";
 
-/* ------------------------------------------------------------------ */
+
 /*  Small presentational helpers                                       */
-/* ------------------------------------------------------------------ */
+
 
 const CAT_STYLES = {
   Deluxe: {
@@ -98,9 +98,7 @@ function Toast({ toast }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
 /*  Main App                                                            */
-/* ------------------------------------------------------------------ */
 
 export default function App() {
   const structures = useMemo(
@@ -555,8 +553,8 @@ export default function App() {
         <ConfirmModal
           title="Delete activity"
           message={`Remove "${deleteTarget.eventName}" (${deleteTarget.eventDate})? This permanently deletes its seat assignments.${deleteTarget.eventNumber === Math.max(...events.map((e) => e.eventNumber)) && events.length > 1
-              ? " Member seats will be restored to the previous activity."
-              : ""
+            ? " Member seats will be restored to the previous activity."
+            : ""
             }`}
           confirmLabel="Delete"
           tone="danger"
@@ -939,9 +937,8 @@ function HallDiagram({ structures, seatOccupant }) {
                             });
                           }}
                           onMouseLeave={() => setHoveredSeat(null)}
-                          className={`rounded-md border flex items-center justify-center font-mono font-semibold text-[9px] shrink-0 transition-all duration-150 hover:scale-110 ${
-                            occupant ? s.seatFilled : "border-dashed border-slate-300 text-slate-400 bg-slate-50"
-                          }`}
+                          className={`rounded-md border flex items-center justify-center font-mono font-semibold text-[9px] shrink-0 transition-all duration-150 hover:scale-110 ${occupant ? s.seatFilled : "border-dashed border-slate-300 text-slate-400 bg-slate-50"
+                            }`}
                         >
                           {label.replace(/[A-Z]/g, "")}
                         </div>
@@ -988,9 +985,8 @@ function HallDiagram({ structures, seatOccupant }) {
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${
-              hoveredSeat.category === "Deluxe" ? "bg-indigo-500" : "bg-emerald-500"
-            }`} />
+            <span className={`w-2 h-2 rounded-full ${hoveredSeat.category === "Deluxe" ? "bg-indigo-500" : "bg-emerald-500"
+              }`} />
             <span className="text-[10px] text-slate-400 font-medium">
               {hoveredSeat.category} Seat
             </span>
