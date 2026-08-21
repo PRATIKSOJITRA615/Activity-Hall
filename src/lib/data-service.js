@@ -31,7 +31,7 @@ export const subscribeToEvents = (callback) => {
   });
 };
 
-// Subscribe to all assignments (real-time)
+
 export const subscribeToAssignments = (callback) => {
   const q = query(collection(db, "assignments"));
   return onSnapshot(q, (snapshot) => {
