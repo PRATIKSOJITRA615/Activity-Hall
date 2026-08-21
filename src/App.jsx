@@ -1077,6 +1077,13 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
     onConfirm({ eventName, eventDate, selectedIds });
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleConfirm();
+    }
+  };
+
   const allSelected = selectedIds.size === rows.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < rows.length;
 
@@ -1089,7 +1096,7 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
         </div>
         <button onClick={onCancel} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
       </div>
-      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60" onKeyDown={handleKeyDown}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-medium text-slate-500 mb-1.5 block">Activity name</label>
