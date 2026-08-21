@@ -1124,7 +1124,7 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
                     if (input) input.indeterminate = someSelected;
                   }}
                   onChange={handleToggleAll}
-                  className="rounded border-slate-300 text-slate-900 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                  className="rounded border-slate-300 accent-slate-900 h-4 w-4 cursor-pointer"
                 />
               </th>
               <th className="py-2 font-medium whitespace-nowrap min-w-[120px]">Name</th>
@@ -1143,7 +1143,7 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleToggleRow(r.userId)}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                      className="rounded border-slate-300 accent-slate-900 h-4 w-4 cursor-pointer"
                     />
                   </td>
                   <td className="py-2 font-medium text-slate-800 whitespace-nowrap">{r.userName}</td>
