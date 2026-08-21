@@ -55,15 +55,15 @@ export const updateMemberInDb = async (memberId, updates) => {
 };
 
 export const saveEventAndAssignments = async (newEvent, assignmentsList, updatedMembers) => {
-  // 1. Save Event
+  //  1. Save Event
   const eventRef = doc(db, "events", newEvent.id);
   await setDoc(eventRef, newEvent);
 
-  // 2. Save Assignments under 'assignments' collection with eventId as doc ID
+  //  2. Save Assignments under 'assignments' collection with eventId as doc ID
   const assignmentsRef = doc(db, "assignments", newEvent.id);
   await setDoc(assignmentsRef, { list: assignmentsList });
 
-  // 3. Update all affected members with their new seat index
+  //  3. Update all affected members with their new seat index
   // We can do this with Promise.all to update them quickly
   const updates = updatedMembers.map((m) => {
     const mRef = doc(db, "members", m.id);

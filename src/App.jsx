@@ -22,12 +22,12 @@ import {
   Trash2,
   Menu
 } from "lucide-react";
-import { 
-  subscribeToMembers, 
-  subscribeToEvents, 
-  subscribeToAssignments, 
-  addMemberToDb, 
-  updateMemberInDb, 
+import {
+  subscribeToMembers,
+  subscribeToEvents,
+  subscribeToAssignments,
+  addMemberToDb,
+  updateMemberInDb,
   saveEventAndAssignments,
   deleteEventFromDb,
   deleteMemberFromDb
@@ -87,9 +87,8 @@ function Toast({ toast }) {
   return (
     <div className="fixed bottom-6 right-6 z-50 no-print">
       <div
-        className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${
-          isError ? "bg-red-50 border-red-200 text-red-700" : "bg-slate-900 border-slate-800 text-white"
-        }`}
+        className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${isError ? "bg-red-50 border-red-200 text-red-700" : "bg-slate-900 border-slate-800 text-white"
+          }`}
       >
         {isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} className="text-emerald-400" />}
         {toast.message}
@@ -119,7 +118,7 @@ export default function App() {
     unsubs.push(subscribeToMembers((m) => { setMembers(m); setLoading(false); }));
     unsubs.push(subscribeToEvents(setEvents));
     unsubs.push(subscribeToAssignments(setAssignments));
-    
+
     return () => unsubs.forEach(u => u());
   }, []);
 
@@ -168,16 +167,16 @@ export default function App() {
     const activeSameCat = updated
       .filter((m) => m.category === target.category && m.status === "active")
       .sort((a, b) => a.currentSeatIndex - b.currentSeatIndex);
-    
+
     const updates = [];
     updates.push(updateMemberInDb(id, { status: "inactive" }));
-    
+
     activeSameCat.forEach((m, idx) => {
       if (m.currentSeatIndex !== idx) {
         updates.push(updateMemberInDb(m.id, { currentSeatIndex: idx }));
       }
     });
-    
+
     await Promise.all(updates);
     setDeactivateTarget(null);
     showToast("Member deactivated");
@@ -237,12 +236,12 @@ export default function App() {
       }));
 
     const updatedMembers = members.map(m => {
-       if (!selectedIds.has(m.id)) return null;
-       const p = preview[m.category].find(x => x.userId === m.id);
-       if(p && p.newIndex !== m.currentSeatIndex) {
-         return { ...m, currentSeatIndex: p.newIndex };
-       }
-       return null;
+      if (!selectedIds.has(m.id)) return null;
+      const p = preview[m.category].find(x => x.userId === m.id);
+      if (p && p.newIndex !== m.currentSeatIndex) {
+        return { ...m, currentSeatIndex: p.newIndex };
+      }
+      return null;
     }).filter(Boolean);
 
     await saveEventAndAssignments(newEvent, flat, updatedMembers);
@@ -328,7 +327,7 @@ export default function App() {
     showToast("CSV exported");
   };
 
-  /* ---------------- derived data ---------------- */
+  /* --------------- derived data --------------- */
 
   const filteredMembers = useMemo(() => {
     return members
@@ -393,20 +392,20 @@ export default function App() {
 
       {/* ---------------- Mobile Menu Overlay ---------------- */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
-      {/* ---------------- Sidebar ---------------- */}
+      {/* --------------- Sidebar --------------- */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col no-print transition-transform duration-300 lg:static lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-200 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
             <Armchair size={16} className="text-white" />
           </div>
           <span className="font-display font-bold text-[15px] tracking-tight">Seat Rotation</span>
-          <button 
+          <button
             className="lg:hidden ml-auto text-slate-400 hover:text-slate-600"
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -424,9 +423,8 @@ export default function App() {
                   setPage(item.key);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  active ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${active ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+                  }`}
               >
                 <Icon size={17} />
                 {item.label}
@@ -453,7 +451,7 @@ export default function App() {
       <main className="flex-1 min-w-0 print-area flex flex-col">
         <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 lg:px-8 no-print sticky top-0 z-30 shrink-0">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900"
               onClick={() => setIsMobileMenuOpen(true)}
             >
@@ -555,11 +553,10 @@ export default function App() {
       {deleteTarget && (
         <ConfirmModal
           title="Delete activity"
-          message={`Remove "${deleteTarget.eventName}" (${deleteTarget.eventDate})? This permanently deletes its seat assignments.${
-            deleteTarget.eventNumber === Math.max(...events.map((e) => e.eventNumber)) && events.length > 1
+          message={`Remove "${deleteTarget.eventName}" (${deleteTarget.eventDate})? This permanently deletes its seat assignments.${deleteTarget.eventNumber === Math.max(...events.map((e) => e.eventNumber)) && events.length > 1
               ? " Member seats will be restored to the previous activity."
               : ""
-          }`}
+            }`}
           confirmLabel="Delete"
           tone="danger"
           onCancel={() => setDeleteTarget(null)}
@@ -666,9 +663,8 @@ function MembersPage({
             <button
               key={c}
               onClick={() => setCategoryFilter(c)}
-              className={`whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                categoryFilter === c ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-              }`}
+              className={`whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${categoryFilter === c ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                }`}
             >
               {c}
             </button>
@@ -926,9 +922,8 @@ function HallDiagram({ structures, seatOccupant }) {
                           key={label}
                           title={occupant ? `${occupant} — ${label}` : `${label} (empty)`}
                           style={{ width: 36, height: 24 }}
-                          className={`rounded-md border flex items-center justify-center font-mono font-semibold text-[9px] shrink-0 ${
-                            occupant ? s.seatFilled : "border-dashed border-slate-300 text-slate-400 bg-slate-50"
-                          }`}
+                          className={`rounded-md border flex items-center justify-center font-mono font-semibold text-[9px] shrink-0 ${occupant ? s.seatFilled : "border-dashed border-slate-300 text-slate-400 bg-slate-50"
+                            }`}
                         >
                           {label.replace(/[A-Z]/g, "")}
                         </div>
@@ -1009,9 +1004,8 @@ function AddMemberModal({ onClose, onSubmit, structures, members }) {
               <button
                 key={c}
                 onClick={() => setCategory(c)}
-                className={`flex-1 px-3 py-2.5 rounded-lg border text-sm font-medium ${
-                  category === c ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600"
-                }`}
+                className={`flex-1 px-3 py-2.5 rounded-lg border text-sm font-medium ${category === c ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600"
+                  }`}
               >
                 {c}
               </button>

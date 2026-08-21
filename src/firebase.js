@@ -14,4 +14,5 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-// export const analytics = getAnalytics(app); // disabled for local dev if not needed
+// export const analytics = getAnalytics(app);
+// disabled for local dev if not needed.

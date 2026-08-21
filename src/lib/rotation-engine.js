@@ -1,6 +1,6 @@
-/* ------------------------------------------------------------------ */
+
 /*  Seat geometry — mirrors the physical hall layout                   */
-/* ------------------------------------------------------------------ */
+
 
 const HALL_ROWS = {
   Deluxe: [
@@ -26,7 +26,7 @@ export function buildSeatStructure(category) {
   HALL_ROWS[category].forEach(([row, count]) => {
     const labels = [];
     for (let n = 1; n < count; n += 2) {
-      const label = `${row}${n}-${row}${n+1}`;
+      const label = `${row}${n}-${row}${n + 1}`;
       labels.push(label);
       flat.push(label);
     }
@@ -35,9 +35,9 @@ export function buildSeatStructure(category) {
   return { flat, rows, total: flat.length };
 }
 
-/* ------------------------------------------------------------------ */
+
 /*  Rotation logic                                                      */
-/* ------------------------------------------------------------------ */
+
 
 export function computePreview(members, isFirstEvent, structures) {
   const preview = { Deluxe: [], Premium: [] };
