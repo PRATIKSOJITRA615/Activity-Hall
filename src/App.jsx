@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Sparkles,
   Loader2,
-  Trash2
+  Trash2,
+  Menu
 } from "lucide-react";
 import { 
   subscribeToMembers, 
@@ -111,6 +112,7 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [assignments, setAssignments] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     let unsubs = [];
@@ -213,7 +215,7 @@ export default function App() {
     });
   };
 
-  const confirmGenerate = async ({ eventName, eventDate }) => {
+  const confirmGenerate = async ({ eventName, eventDate, selectedIds }) => {
     if (!previewModal) return;
     const { preview, eventNumber } = previewModal;
     const newEventId = `evt-${Date.now()}`;
@@ -224,15 +226,18 @@ export default function App() {
       eventDate,
       createdAt: new Date().toISOString(),
     };
-    const flat = [...preview.Deluxe, ...preview.Premium].map((p) => ({
-      eventId: newEventId,
-      userId: p.userId,
-      userName: p.userName,
-      category: p.category,
-      assignedSeat: p.assignedSeat,
-    }));
+    const flat = [...preview.Deluxe, ...preview.Premium]
+      .filter((p) => selectedIds.has(p.userId))
+      .map((p) => ({
+        eventId: newEventId,
+        userId: p.userId,
+        userName: p.userName,
+        category: p.category,
+        assignedSeat: p.assignedSeat,
+      }));
 
     const updatedMembers = members.map(m => {
+       if (!selectedIds.has(m.id)) return null;
        const p = preview[m.category].find(x => x.userId === m.id);
        if(p && p.newIndex !== m.currentSeatIndex) {
          return { ...m, currentSeatIndex: p.newIndex };
@@ -386,22 +391,39 @@ export default function App() {
         }
       `}</style>
 
+      {/* ---------------- Mobile Menu Overlay ---------------- */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* ---------------- Sidebar ---------------- */}
-      <aside className="w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col no-print">
-        <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-200">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col no-print transition-transform duration-300 lg:static lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-200 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
             <Armchair size={16} className="text-white" />
           </div>
           <span className="font-display font-bold text-[15px] tracking-tight">Seat Rotation</span>
+          <button 
+            className="lg:hidden ml-auto text-slate-400 hover:text-slate-600"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <X size={18} />
+          </button>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {NAV.map((item) => {
             const Icon = item.icon;
             const active = page === item.key;
             return (
               <button
                 key={item.key}
-                onClick={() => setPage(item.key)}
+                onClick={() => {
+                  setPage(item.key);
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   active ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
                 }`}
@@ -412,7 +434,7 @@ export default function App() {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-slate-200">
+        <div className="p-4 border-t border-slate-200 shrink-0">
           <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
             <p className="text-xs font-semibold text-slate-500 mb-2">Category capacity</p>
             <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
@@ -428,20 +450,29 @@ export default function App() {
       </aside>
 
       {/* ---------------- Main ---------------- */}
-      <main className="flex-1 min-w-0 print-area">
-        <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8 no-print">
-          <h1 className="font-display font-semibold text-lg tracking-tight">
-            {NAV.find((n) => n.key === page)?.label}
-          </h1>
+      <main className="flex-1 min-w-0 print-area flex flex-col">
+        <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 lg:px-8 no-print sticky top-0 z-30 shrink-0">
+          <div className="flex items-center gap-3">
+            <button 
+              className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900"
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
+              <Menu size={20} />
+            </button>
+            <h1 className="font-display font-semibold text-lg tracking-tight">
+              {NAV.find((n) => n.key === page)?.label}
+            </h1>
+          </div>
           {lastEvent && (
             <div className="flex items-center gap-2 text-xs text-slate-400">
-              <CalendarDays size={14} />
-              Last activity: {lastEvent.eventName} · {lastEvent.eventDate}
+              <CalendarDays size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Last activity: {lastEvent.eventName} · {lastEvent.eventDate}</span>
+              <span className="sm:hidden truncate max-w-[100px]">{lastEvent.eventName}</span>
             </div>
           )}
         </header>
 
-        <div className="px-8 py-7 max-w-6xl">
+        <div className="px-4 lg:px-8 py-6 max-w-6xl w-full mx-auto">
           {page === "dashboard" && (
             <Dashboard
               activeDeluxe={activeDeluxe}
@@ -629,13 +660,13 @@ function MembersPage({
 }) {
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto">
           {["All", "Deluxe", "Premium"].map((c) => (
             <button
               key={c}
               onClick={() => setCategoryFilter(c)}
-              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+              className={`whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                 categoryFilter === c ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
               }`}
             >
@@ -643,19 +674,19 @@ function MembersPage({
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search name or mobile"
-              className="pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-white w-64 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+              className="pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-white w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
             />
           </div>
           <button
             onClick={onAdd}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 w-full sm:w-auto shrink-0"
           >
             <Plus size={15} /> Add Member
           </button>
@@ -663,56 +694,58 @@ function MembersPage({
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
-              <th className="text-left font-medium px-5 py-3">Name</th>
-              <th className="text-left font-medium px-5 py-3">Mobile</th>
-              <th className="text-left font-medium px-5 py-3">Category</th>
-              <th className="text-left font-medium px-5 py-3">Current Seat</th>
-              <th className="text-left font-medium px-5 py-3">Status</th>
-              <th className="text-right font-medium px-5 py-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m) => (
-              <tr key={m.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-                <td className="px-5 py-3 font-medium text-slate-800">{m.name}</td>
-                <td className="px-5 py-3 text-slate-500">{m.phone}</td>
-                <td className="px-5 py-3"><CategoryChip category={m.category} /></td>
-                <td className="px-5 py-3 text-slate-600 font-mono text-xs">
-                  {m.status === "active" ? seatLabelForMember(m, currentEventId) : "—"}
-                </td>
-                <td className="px-5 py-3">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${m.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                    {m.status === "active" ? "Active" : "Inactive"}
-                  </span>
-                </td>
-                <td className="px-5 py-3 text-right">
-                  {m.status === "active" ? (
-                    <button onClick={() => onDeactivate(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700">
-                      <UserX size={14} /> Deactivate
-                    </button>
-                  ) : (
-                    <div className="flex items-center justify-end gap-3">
-                      <button onClick={() => onReactivate(m.id)} className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900">
-                        <UserCheck size={14} /> Reactivate
-                      </button>
-                      <button onClick={() => onDelete(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700">
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </div>
-                  )}
-                </td>
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Name</th>
+                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Mobile</th>
+                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Category</th>
+                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Current Seat</th>
+                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Status</th>
+                <th className="text-right font-medium px-5 py-3 whitespace-nowrap">Action</th>
               </tr>
-            ))}
-            {members.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-slate-400 text-sm">No members match your search.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {members.map((m) => (
+                <tr key={m.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                  <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap min-w-[150px]">{m.name}</td>
+                  <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{m.phone}</td>
+                  <td className="px-5 py-3 whitespace-nowrap"><CategoryChip category={m.category} /></td>
+                  <td className="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">
+                    {m.status === "active" ? seatLabelForMember(m, currentEventId) : "—"}
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${m.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                      {m.status === "active" ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-right whitespace-nowrap">
+                    {m.status === "active" ? (
+                      <button onClick={() => onDeactivate(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700">
+                        <UserX size={14} /> Deactivate
+                      </button>
+                    ) : (
+                      <div className="flex items-center justify-end gap-3">
+                        <button onClick={() => onReactivate(m.id)} className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900">
+                          <UserCheck size={14} /> Reactivate
+                        </button>
+                        <button onClick={() => onDelete(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700">
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {members.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-10 text-center text-slate-400 text-sm">No members match your search.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -727,7 +760,7 @@ function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onD
   const nextEventNumber = events.length === 0 ? 1 : Math.max(...events.map((e) => e.eventNumber)) + 1;
   return (
     <div className="space-y-6">
-      <div className="bg-slate-900 rounded-2xl p-6 flex items-center justify-between text-white">
+      <div className="bg-slate-900 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between text-white gap-5">
         <div>
           <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Next step</p>
           <h3 className="font-display font-semibold text-lg">
@@ -741,7 +774,7 @@ function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onD
         </div>
         <button
           onClick={onGenerate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 text-sm font-semibold hover:bg-slate-100 shrink-0"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 text-sm font-semibold hover:bg-slate-100 shrink-0 w-full sm:w-auto"
         >
           <Sparkles size={16} /> Generate Next Activity Seats
         </button>
@@ -753,24 +786,24 @@ function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onD
           const deluxeCount = list.filter((a) => a.category === "Deluxe").length;
           const premiumCount = list.filter((a) => a.category === "Premium").length;
           return (
-            <div key={ev.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex items-center justify-between">
+            <div key={ev.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="font-semibold text-sm text-slate-900">{ev.eventName}</p>
-                <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
-                  <span className="flex items-center gap-1"><CalendarDays size={13} /> {ev.eventDate}</span>
-                  <span>{deluxeCount} Deluxe</span>
-                  <span>·</span>
-                  <span>{premiumCount} Premium</span>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 text-xs text-slate-500">
+                  <span className="flex items-center gap-1 whitespace-nowrap"><CalendarDays size={13} /> {ev.eventDate}</span>
+                  <span className="whitespace-nowrap">{deluxeCount} Deluxe</span>
+                  <span className="hidden sm:inline">·</span>
+                  <span className="whitespace-nowrap">{premiumCount} Premium</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => onExport(ev.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:border-slate-300">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                <button onClick={() => onExport(ev.id)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap">
                   <Download size={13} /> Export CSV
                 </button>
-                <button onClick={() => onView(ev.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">
+                <button onClick={() => onView(ev.id)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 whitespace-nowrap">
                   <LayoutGrid size={13} /> View Seat Map
                 </button>
-                <button onClick={() => onDelete(ev)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-xs font-medium text-red-600 hover:bg-red-50">
+                <button onClick={() => onDelete(ev)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-xs font-medium text-red-600 hover:bg-red-50 whitespace-nowrap">
                   <Trash2 size={13} /> Delete
                 </button>
               </div>
@@ -798,13 +831,13 @@ function SeatMapPage({ events, assignments, structures, selectedEventId, setSele
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 no-print">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
         {currentEvent ? (
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <select
               value={currentEvent.id}
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="appearance-none pl-4 pr-9 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+              className="appearance-none w-full sm:w-auto pl-4 pr-9 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900/10"
             >
               {sorted.map((ev) => (
                 <option key={ev.id} value={ev.id}>{ev.eventName} · {ev.eventDate}</option>
@@ -815,13 +848,13 @@ function SeatMapPage({ events, assignments, structures, selectedEventId, setSele
         ) : (
           <div className="text-sm font-medium text-slate-500 px-2">Empty Hall (No activities generated)</div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {currentEvent && (
-            <button onClick={() => onExport(currentEvent.id)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-300">
+            <button onClick={() => onExport(currentEvent.id)} className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap">
               <Download size={14} /> Export CSV
             </button>
           )}
-          <button onClick={() => window.print()} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-300">
+          <button onClick={() => window.print()} className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap">
             <Printer size={14} /> Print
           </button>
         </div>
@@ -860,7 +893,7 @@ function HallDiagram({ structures, seatOccupant }) {
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6">
-      <div className="flex items-center gap-5 mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 mb-2">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <CategoryChip category="Deluxe" /><span>{filledDeluxe}/{structures.Deluxe.total} filled · rows B–F</span>
         </div>
@@ -1023,18 +1056,42 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
   const [error, setError] = useState("");
   const rows = [...preview.Deluxe, ...preview.Premium];
 
+  const [selectedIds, setSelectedIds] = useState(() => new Set(rows.map((r) => r.userId)));
+
+  const handleToggleAll = () => {
+    if (selectedIds.size === rows.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(rows.map((r) => r.userId)));
+    }
+  };
+
+  const handleToggleRow = (userId) => {
+    const next = new Set(selectedIds);
+    if (next.has(userId)) {
+      next.delete(userId);
+    } else {
+      next.add(userId);
+    }
+    setSelectedIds(next);
+  };
+
   const handleConfirm = () => {
     if (!eventName.trim()) return setError("Enter an activity name.");
     if (!eventDate) return setError("Select an activity date.");
-    onConfirm({ eventName, eventDate });
+    if (selectedIds.size === 0) return setError("Select at least one member.");
+    onConfirm({ eventName, eventDate, selectedIds });
   };
+
+  const allSelected = selectedIds.size === rows.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < rows.length;
 
   return (
     <ModalShell onClose={onCancel} wide>
       <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
         <div>
           <h3 className="font-display font-semibold text-base">New Calculator Activity #{eventNumber}</h3>
-          <p className="text-xs text-slate-500 mt-0.5">{rows.length} members · set details and review seats before saving.</p>
+          <p className="text-xs text-slate-500 mt-0.5">{selectedIds.size} of {rows.length} members selected · set details and review seats before saving.</p>
         </div>
         <button onClick={onCancel} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
       </div>
@@ -1059,30 +1116,52 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
             />
           </div>
         </div>
-        {error && <p className="text-xs text-red-600 flex items-center gap-1 mt-3"><AlertCircle size={13} />{error}</p>}
+        {error && <p className="text-xs text-red-600 flex items-center gap-1 mt-2"><AlertCircle size={13} />{error}</p>}
       </div>
-      <div className="overflow-y-auto px-6 py-4">
+      <div className="overflow-auto px-6 py-4 max-h-[60vh]">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-white">
+          <thead className="sticky top-0 bg-white z-10">
             <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
-              <th className="py-2 font-medium">Name</th>
-              <th className="py-2 font-medium">Category</th>
-              {!isFirst && <th className="py-2 font-medium">Previous seat</th>}
-              <th className="py-2 font-medium">New seat</th>
+              <th className="py-2 w-10 px-2">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(input) => {
+                    if (input) input.indeterminate = someSelected;
+                  }}
+                  onChange={handleToggleAll}
+                  className="rounded border-slate-300 text-slate-900 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                />
+              </th>
+              <th className="py-2 font-medium whitespace-nowrap min-w-[120px]">Name</th>
+              <th className="py-2 font-medium whitespace-nowrap">Category</th>
+              {!isFirst && <th className="py-2 font-medium whitespace-nowrap">Previous seat</th>}
+              <th className="py-2 font-medium whitespace-nowrap">New seat</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.userId} className="border-b border-slate-50">
-                <td className="py-2 font-medium text-slate-800">{r.userName}</td>
-                <td className="py-2"><CategoryChip category={r.category} /></td>
-                {!isFirst && <td className="py-2 font-mono text-xs text-slate-400">{r.previousSeat}</td>}
-                <td className="py-2 font-mono text-xs font-semibold text-slate-800">
-                  {!isFirst && <ArrowRight size={11} className="inline mr-1 text-slate-300" />}
-                  {r.assignedSeat}
-                </td>
-              </tr>
-            ))}
+            {rows.map((r) => {
+              const isSelected = selectedIds.has(r.userId);
+              return (
+                <tr key={r.userId} className={`border-b border-slate-50 hover:bg-slate-50/50 ${!isSelected ? "opacity-50" : ""}`}>
+                  <td className="py-2 px-2">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleToggleRow(r.userId)}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                    />
+                  </td>
+                  <td className="py-2 font-medium text-slate-800 whitespace-nowrap">{r.userName}</td>
+                  <td className="py-2 whitespace-nowrap"><CategoryChip category={r.category} /></td>
+                  {!isFirst && <td className="py-2 font-mono text-xs text-slate-400 whitespace-nowrap">{r.previousSeat}</td>}
+                  <td className="py-2 font-mono text-xs font-semibold text-slate-800 whitespace-nowrap">
+                    {!isFirst && <ArrowRight size={11} className="inline mr-1 text-slate-300" />}
+                    {isSelected ? r.assignedSeat : "—"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
