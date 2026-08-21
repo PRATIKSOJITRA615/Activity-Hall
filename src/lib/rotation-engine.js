@@ -1,5 +1,5 @@
 
-/*  Seat geometry — mirrors the physical hall layout                   */
+/*  Seat geometry — mirrors the physical hall layout */
 
 
 const HALL_ROWS = {
@@ -36,7 +36,7 @@ export function buildSeatStructure(category) {
 }
 
 
-/*  Rotation logic                                                      */
+/*  Rotation logic  */
 
 
 export function computePreview(members, isFirstEvent, structures) {
