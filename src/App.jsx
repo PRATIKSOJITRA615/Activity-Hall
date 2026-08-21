@@ -34,6 +34,7 @@ import {
 } from "./lib/data-service";
 
 import { buildSeatStructure, computePreview } from "./lib/rotation-engine";
+import seatIcon from "./assets/icon.png";
 
 /* ------------------------------------------------------------------ */
 /*  Small presentational helpers                                       */
@@ -876,6 +877,8 @@ const COUNT_LABEL_W = 30;
 const WALKWAY_AFTER_ROW = "H"; // hall aisle sits behind Premium row H
 
 function HallDiagram({ structures, seatOccupant }) {
+  const [hoveredSeat, setHoveredSeat] = useState(null);
+
   const orderedRows = [
     ...structures.Deluxe.rows.map((r) => ({ ...r, category: "Deluxe" })),
     ...structures.Premium.rows.map((r) => ({ ...r, category: "Premium" })),
@@ -888,7 +891,7 @@ function HallDiagram({ structures, seatOccupant }) {
   const filledPremium = structures.Premium.flat.filter((l) => seatOccupant("Premium", l)).length;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6">
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 relative">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 mb-2">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <CategoryChip category="Deluxe" /><span>{filledDeluxe}/{structures.Deluxe.total} filled · rows B–F</span>
@@ -920,10 +923,25 @@ function HallDiagram({ structures, seatOccupant }) {
                       return (
                         <div
                           key={label}
-                          title={occupant ? `${occupant} — ${label}` : `${label} (empty)`}
-                          style={{ width: 36, height: 24 }}
-                          className={`rounded-md border flex items-center justify-center font-mono font-semibold text-[9px] shrink-0 ${occupant ? s.seatFilled : "border-dashed border-slate-300 text-slate-400 bg-slate-50"
-                            }`}
+                          style={{
+                            width: 36,
+                            height: 24,
+                            cursor: `url(${seatIcon}) 16 16, pointer`
+                          }}
+                          onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setHoveredSeat({
+                              label,
+                              occupant,
+                              category,
+                              x: rect.left + window.scrollX + rect.width / 2,
+                              y: rect.top + window.scrollY - 8,
+                            });
+                          }}
+                          onMouseLeave={() => setHoveredSeat(null)}
+                          className={`rounded-md border flex items-center justify-center font-mono font-semibold text-[9px] shrink-0 transition-all duration-150 hover:scale-110 ${
+                            occupant ? s.seatFilled : "border-dashed border-slate-300 text-slate-400 bg-slate-50"
+                          }`}
                         >
                           {label.replace(/[A-Z]/g, "")}
                         </div>
@@ -948,6 +966,37 @@ function HallDiagram({ structures, seatOccupant }) {
       </div>
 
       <p className="text-center text-[10px] tracking-[0.3em] text-slate-500 font-semibold mt-6">BACK OF HALL</p>
+
+      {hoveredSeat && (
+        <div
+          style={{
+            position: "fixed",
+            left: hoveredSeat.x,
+            top: hoveredSeat.y,
+            transform: "translate(-50%, -100%)",
+            pointerEvents: "none",
+            zIndex: 100,
+          }}
+          className="bg-slate-900/95 backdrop-blur text-white rounded-xl shadow-xl px-3.5 py-2.5 text-xs border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-150 min-w-[150px] flex flex-col gap-1.5"
+        >
+          <div className="flex justify-between items-center gap-4">
+            <span className="font-semibold text-slate-100 font-display text-[13px]">
+              {hoveredSeat.occupant || "Empty Seat"}
+            </span>
+            <span className="text-[10px] bg-slate-800 text-slate-300 font-mono px-1.5 py-0.5 rounded font-bold border border-slate-700">
+              {hoveredSeat.label}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${
+              hoveredSeat.category === "Deluxe" ? "bg-indigo-500" : "bg-emerald-500"
+            }`} />
+            <span className="text-[10px] text-slate-400 font-medium">
+              {hoveredSeat.category} Seat
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
