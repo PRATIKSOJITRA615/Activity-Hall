@@ -17,7 +17,6 @@ import {
   ChevronDown,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
   Loader2,
   Trash2,
   Menu
@@ -778,7 +777,7 @@ function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onD
           onClick={onGenerate}
           className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 text-sm font-semibold hover:bg-slate-100 shrink-0 w-full sm:w-auto"
         >
-          <Sparkles size={16} /> Generate Next Activity Seats
+          Generate Next Activity Seats
         </button>
       </div>
 
