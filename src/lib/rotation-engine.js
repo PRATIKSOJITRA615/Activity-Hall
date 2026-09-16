@@ -97,7 +97,6 @@ function shuffleArray(arr) {
  * 2. Premium rotates through rows G -> H -> I -> J -> K -> L -> G.
  * 3. Members who were in Corner seats (e.g. B1-B2) are placed in Center seats in the next row (e.g. C21-C22).
  * 4. Members who were in Center seats are rotated to Corner/outer seats in the next row.
- * 5. Seats are fairly shuffled within each zone so allocations remain dynamic and exciting.
  */
 export function computePreview(members, isFirstEvent, structures) {
   const preview = { Deluxe: [], Premium: [] };
