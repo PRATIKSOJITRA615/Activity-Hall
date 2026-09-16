@@ -374,7 +374,7 @@ export default function App() {
 
   return (
     <div
-      className="min-h-screen bg-slate-50 text-slate-900 flex"
+      className="h-screen bg-slate-50 text-slate-900 flex overflow-hidden"
       style={{ fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}
     >
       <style>{`
@@ -387,8 +387,8 @@ export default function App() {
         .seat-scroll::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
         @media print {
           .no-print { display: none !important; }
-          .print-area { padding: 0 !important; }
-          body { background: white !important; }
+          .print-area { padding: 0 !important; overflow: visible !important; height: auto !important; }
+          body { background: white !important; overflow: visible !important; height: auto !important; }
         }
       `}</style>
 
@@ -401,7 +401,7 @@ export default function App() {
       )}
 
       {/*  Sidebar  */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col no-print transition-transform duration-300 lg:static lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col no-print transition-transform duration-300 shrink-0 lg:static lg:translate-x-0 h-full ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-200 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
             <Armchair size={16} className="text-white" />
@@ -457,7 +457,7 @@ export default function App() {
       </aside>
 
       {/*  Main  */}
-      <main className="flex-1 min-w-0 print-area flex flex-col">
+      <main className="flex-1 min-w-0 print-area flex flex-col h-screen overflow-y-auto">
         <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 lg:px-8 no-print sticky top-0 z-30 shrink-0">
           <div className="flex items-center gap-3">
             <button
