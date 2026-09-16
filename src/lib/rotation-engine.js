@@ -9,12 +9,12 @@ export const HALL_ROWS = {
     ["F", 42], // 21 pairs (F1-2 to F41-42) - Reserved for new members
   ],
   Premium: [
-    ["G", 44], // 22 pairs
-    ["H", 46], // 23 pairs
-    ["I", 42], // 21 pairs
-    ["J", 44], // 22 pairs
-    ["K", 46], // 23 pairs
-    ["L", 48], // 24 pairs
+    ["G", 44], // 22 pairs (G1-2 to G43-44)
+    ["H", 46], // 23 pairs (H1-2 to H45-46)
+    ["I", 42], // 21 pairs (I1-2 to I41-42)
+    ["J", 44], // 22 pairs (J1-2 to J43-44)
+    ["K", 46], // 23 pairs (K1-2 to K45-46)
+    ["L", 48], // 24 pairs (L1-2 to L47-48)
   ],
 };
 
@@ -86,17 +86,19 @@ function shuffleArray(arr) {
   const shuffled = [...arr];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    [shuffled[j], shuffled[i]] = [shuffled[i], shuffled[j]];
   }
   return shuffled;
 }
 
 /**
- * Smart Fair Rotation with Row-Progression & Corner-to-Center Alternation:
- * 1. Deluxe rotates only through rows B -> C -> D -> E -> B (Row F is reserved for new members).
- * 2. Premium rotates through rows G -> H -> I -> J -> K -> L -> G.
- * 3. Members who were in Corner seats (e.g. B1-B2) are placed in Center seats in the next row (e.g. C21-C22).
- * 4. Members who were in Center seats are rotated to Corner/outer seats in the next row.
+ * Smart Fair Rotation with Continuous Seating (Zero Gaps in Between):
+ * 1. All active members occupy continuous seats from 0 to N-1 (empty seats only at the very end).
+ * 2. Premium rotates across active filled rows (Row G -> Row H -> Row I ... -> Row G).
+ * 3. Deluxe rotates across active filled rows (Row B -> Row C -> Row D -> Row E -> Row B, Row F reserved).
+ * 4. Members who were in Corner seats are prioritized for Center seats in the next row.
+ * 5. Members who were in Center seats are rotated to Corner/outer seats in the next row.
+ * 6. Seats within each zone are fairly shuffled for a fresh and balanced experience.
  */
 export function computePreview(members, isFirstEvent, structures) {
   const preview = { Deluxe: [], Premium: [] };
@@ -104,14 +106,17 @@ export function computePreview(members, isFirstEvent, structures) {
   ["Deluxe", "Premium"].forEach((cat) => {
     const struct = structures[cat];
     const active = members.filter((m) => m.category === cat && m.status === "active");
+    const N = active.length;
 
-    // Deluxe uses rows B, C, D, E (0..3) for regular rotation. Row F (4) is reserved for new members.
-    // Premium uses all rows G..L (0..5).
-    const activeNumRows = cat === "Deluxe" ? Math.min(4, struct.rows.length) : struct.rows.length;
+    if (N === 0) {
+      preview[cat] = [];
+      return;
+    }
+
     const totalNumRows = struct.rows.length;
     const flat = struct.flat;
 
-    // Row offsets
+    // Compute row start offsets
     const rowOffsets = [];
     let curOff = 0;
     for (let r = 0; r < totalNumRows; r++) {
@@ -119,10 +124,11 @@ export function computePreview(members, isFirstEvent, structures) {
       curOff += struct.rows[r].labels.length;
     }
 
+    // First event: place all N active members continuously in seats 0..N-1
     if (isFirstEvent) {
       const sorted = [...active].sort((a, b) => (a.currentSeatIndex ?? 0) - (b.currentSeatIndex ?? 0));
       preview[cat] = sorted.map((m, idx) => {
-        const newIndex = m.currentSeatIndex !== undefined && m.currentSeatIndex >= 0 ? m.currentSeatIndex : idx;
+        const newIndex = idx;
         return {
           userId: m.id,
           userName: m.name,
@@ -135,13 +141,26 @@ export function computePreview(members, isFirstEvent, structures) {
       return;
     }
 
-    // Step 1: For each member, determine their current seat position, row, and whether they were corner or center
+    // Identify how many rows are currently occupied by the N active members
+    let activeNumRows = 1;
+    for (let r = 0; r < totalNumRows; r++) {
+      if (rowOffsets[r] < N) {
+        activeNumRows = r + 1;
+      } else {
+        break;
+      }
+    }
+    // For Deluxe: regular rotation is within rows B-E (first 4 rows) if N <= 74
+    if (cat === "Deluxe" && activeNumRows > 4 && N <= 74) {
+      activeNumRows = 4;
+    }
+
+    // Step 1: For each member, find current seat position and target next row & zone
     const memberTargets = active.map((m) => {
       const seatInfo = getSeatInfo(m.currentSeatIndex ?? 0, struct);
-      // For Deluxe: if member is on row 0..3, next row is (r + 1) % 4 (B -> C -> D -> E -> B).
-      // If member was in Row F (index 4, e.g. newly added), transition them into Row B (index 0).
-      const nextRowIndex = seatInfo.rowIndex >= activeNumRows ? 0 : (seatInfo.rowIndex + 1) % activeNumRows;
-      const wantsCenter = seatInfo.isCorner; // Corner in prev activity -> Center in next row; Center -> Corner
+      const currRow = seatInfo.rowIndex >= activeNumRows ? 0 : seatInfo.rowIndex;
+      const nextRowIndex = (currRow + 1) % activeNumRows;
+      const wantsCenter = seatInfo.isCorner; // Corner -> Center; Center -> Corner
       return {
         member: m,
         prevSeatInfo: seatInfo,
@@ -156,29 +175,35 @@ export function computePreview(members, isFirstEvent, structures) {
       rowBuckets[t.nextRowIndex].push(t);
     });
 
-    // Step 3: Prepare available slots in each row partitioned into Center and Corner
+    // Step 3: Prepare available slots strictly from indices 0 to N-1 (NO GAPS IN BETWEEN)
     const assignedResults = [];
     const availableRowSlots = [];
 
     for (let r = 0; r < totalNumRows; r++) {
-      const rowLen = struct.rows[r].labels.length;
       const offset = rowOffsets[r];
+      const rowLen = struct.rows[r].labels.length;
       const centerSlots = [];
       const cornerSlots = [];
+
       for (let s = 0; s < rowLen; s++) {
-        if (isSeatCorner(s, rowLen)) {
-          cornerSlots.push(offset + s);
-        } else {
-          centerSlots.push(offset + s);
+        const flatIdx = offset + s;
+        // Only include seats within the first N seats to ensure all empty seats are at the end
+        if (flatIdx < N) {
+          if (isSeatCorner(s, rowLen)) {
+            cornerSlots.push(flatIdx);
+          } else {
+            centerSlots.push(flatIdx);
+          }
         }
       }
+
       availableRowSlots.push({
         centerSlots: shuffleArray(centerSlots),
         cornerSlots: shuffleArray(cornerSlots),
       });
     }
 
-    // Step 4: Assign members to their target row slots (Center seekers get center, Corner seekers get corner)
+    // Step 4: Assign members to their target row slots
     let unassignedMembers = [];
 
     for (let r = 0; r < activeNumRows; r++) {
@@ -192,7 +217,6 @@ export function computePreview(members, isFirstEvent, structures) {
       centerSeekers.forEach((item) => {
         let chosenFlatIdx = rowSlots.centerSlots.pop();
         if (chosenFlatIdx === undefined) {
-          // If center slots in this row are exhausted, take corner slot
           chosenFlatIdx = rowSlots.cornerSlots.pop();
         }
         if (chosenFlatIdx !== undefined) {
@@ -213,7 +237,6 @@ export function computePreview(members, isFirstEvent, structures) {
       cornerSeekers.forEach((item) => {
         let chosenFlatIdx = rowSlots.cornerSlots.pop();
         if (chosenFlatIdx === undefined) {
-          // If corner slots in this row are exhausted, take center slot
           chosenFlatIdx = rowSlots.centerSlots.pop();
         }
         if (chosenFlatIdx !== undefined) {
@@ -231,9 +254,9 @@ export function computePreview(members, isFirstEvent, structures) {
       });
     }
 
-    // Step 5: If any overflow members remain (e.g. capacity in B-E exceeded), fill in remaining rows (e.g. Row F)
+    // Step 5: Fill any remaining unassigned members into open slots in active rows (0..N-1)
     if (unassignedMembers.length > 0) {
-      for (let r = 0; r < totalNumRows && unassignedMembers.length > 0; r++) {
+      for (let r = 0; r < activeNumRows && unassignedMembers.length > 0; r++) {
         const rowSlots = availableRowSlots[r];
         while (unassignedMembers.length > 0 && (rowSlots.centerSlots.length > 0 || rowSlots.cornerSlots.length > 0)) {
           const item = unassignedMembers.pop();
