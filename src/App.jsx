@@ -15,14 +15,11 @@ import {
   Armchair,
   CalendarDays,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   CheckCircle2,
   AlertCircle,
   Loader2,
   Trash2,
-  Menu,
-  Clock
+  Menu
 } from "lucide-react";
 import {
   subscribeToMembers,
@@ -359,7 +356,6 @@ export default function App() {
     { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { key: "members", label: "Members", icon: Users },
     { key: "activities", label: "Calculator Activities", icon: RefreshCw },
-    { key: "calendar", label: "Calendar", icon: CalendarDays },
     { key: "seatmap", label: "Seat Map", icon: LayoutGrid },
   ];
 
@@ -470,25 +466,12 @@ export default function App() {
               {NAV.find((n) => n.key === page)?.label}
             </h1>
           </div>
-          {lastEvent ? (
-            <button
-              onClick={() => setPage("calendar")}
-              className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-xl transition-all border border-slate-200/60 shadow-xs cursor-pointer group"
-              title="Open Activity Calendar"
-            >
-              <CalendarDays size={14} className="shrink-0 text-indigo-600 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline font-medium">Last activity: <span className="text-slate-800 font-semibold">{lastEvent.eventName}</span> · {lastEvent.eventDate}</span>
-              <span className="sm:hidden truncate max-w-[120px] font-medium">{lastEvent.eventName}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setPage("calendar")}
-              className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-xl transition-all border border-slate-200/60 shadow-xs cursor-pointer"
-              title="Open Activity Calendar"
-            >
-              <CalendarDays size={14} className="shrink-0 text-indigo-600" />
-              <span>Calendar</span>
-            </button>
+          {lastEvent && (
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <CalendarDays size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Last activity: {lastEvent.eventName} · {lastEvent.eventDate}</span>
+              <span className="sm:hidden truncate max-w-[100px]">{lastEvent.eventName}</span>
+            </div>
           )}
         </header>
 
@@ -535,18 +518,7 @@ export default function App() {
             />
           )}
 
-          {page === "calendar" && (
-            <CalendarPage
-              events={events}
-              assignments={assignments}
-              onView={(id) => {
-                setSelectedEventId(id);
-                setPage("seatmap");
-              }}
-              onExport={exportCSV}
-              onGenerate={openGeneratePreview}
-            />
-          )}
+
 
           {page === "seatmap" && (
             <SeatMapPage
@@ -846,356 +818,7 @@ function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onD
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Calendar page                                                       */
-/* ------------------------------------------------------------------ */
 
-function CalendarPage({ events, assignments, onView, onExport, onGenerate }) {
-  const initialDate = useMemo(() => {
-    if (events.length > 0) {
-      const sorted = [...events].sort((a, b) => b.eventNumber - a.eventNumber);
-      const d = new Date(sorted[0].eventDate);
-      if (!isNaN(d.getTime())) return d;
-    }
-    return new Date();
-  }, [events]);
-
-  const [currentDate, setCurrentDate] = useState(initialDate);
-  const [selectedDate, setSelectedDate] = useState(null);
-
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-
-  const prevMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
-  };
-
-  const goToToday = () => {
-    setCurrentDate(new Date());
-    setSelectedDate(new Date().toISOString().slice(0, 10));
-  };
-
-  const firstDayOfWeek = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
-
-  const calendarDays = [];
-
-  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-    const d = daysInPrevMonth - i;
-    const prevM = month === 0 ? 11 : month - 1;
-    const prevY = month === 0 ? year - 1 : year;
-    const dateStr = `${prevY}-${String(prevM + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    calendarDays.push({
-      day: d,
-      dateStr,
-      isCurrentMonth: false,
-      isPrevMonth: true,
-    });
-  }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    calendarDays.push({
-      day: d,
-      dateStr,
-      isCurrentMonth: true,
-    });
-  }
-
-  const remainingCells = 42 - calendarDays.length >= 7 && calendarDays.length <= 35
-    ? 35 - calendarDays.length
-    : 42 - calendarDays.length;
-
-  for (let d = 1; d <= remainingCells; d++) {
-    const nextM = month === 11 ? 0 : month + 1;
-    const nextY = month === 11 ? year + 1 : year;
-    const dateStr = `${nextY}-${String(nextM + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    calendarDays.push({
-      day: d,
-      dateStr,
-      isCurrentMonth: false,
-      isNextMonth: true,
-    });
-  }
-
-  const eventsByDate = useMemo(() => {
-    const map = {};
-    events.forEach((ev) => {
-      if (!map[ev.eventDate]) map[ev.eventDate] = [];
-      map[ev.eventDate].push(ev);
-    });
-    return map;
-  }, [events]);
-
-  const todayStr = new Date().toISOString().slice(0, 10);
-
-  const selectedEvents = selectedDate
-    ? events.filter((e) => e.eventDate === selectedDate)
-    : events.filter((e) => {
-      const d = new Date(e.eventDate);
-      return d.getFullYear() === year && d.getMonth() === month;
-    });
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold font-display text-slate-900 tracking-tight flex items-center gap-2.5">
-            <CalendarDays className="text-indigo-600" size={22} />
-            Activity Calendar
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Track and view scheduled and completed Calculator Activity dates
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goToToday}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-colors cursor-pointer"
-          >
-            Today
-          </button>
-          <div className="flex items-center bg-white border border-slate-200 rounded-lg shadow-xs p-0.5">
-            <button
-              onClick={prevMonth}
-              className="p-1.5 hover:bg-slate-100 rounded-md text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-              title="Previous Month"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-xs font-semibold px-3 text-slate-800 min-w-[120px] text-center select-none">
-              {monthNames[month]} {year}
-            </span>
-            <button
-              onClick={nextMonth}
-              className="p-1.5 hover:bg-slate-100 rounded-md text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-              title="Next Month"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-          <button
-            onClick={onGenerate}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 shadow-xs transition-colors ml-1 cursor-pointer"
-          >
-            <Plus size={14} /> New Activity
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden p-5">
-          <div className="grid grid-cols-7 gap-1 text-center mb-2 pb-2 border-b border-slate-100">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, idx) => (
-              <div
-                key={day}
-                className={`text-[11px] font-bold uppercase tracking-wider py-1 ${idx === 0 || idx === 6 ? "text-slate-400" : "text-slate-600"
-                  }`}
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1.5">
-            {calendarDays.map((cDay) => {
-              const dayEvents = eventsByDate[cDay.dateStr] || [];
-              const isToday = cDay.dateStr === todayStr;
-              const isSelected = selectedDate === cDay.dateStr;
-              const hasEvents = dayEvents.length > 0;
-
-              return (
-                <div
-                  key={cDay.dateStr}
-                  onClick={() => {
-                    if (isSelected) {
-                      setSelectedDate(null);
-                    } else {
-                      setSelectedDate(cDay.dateStr);
-                    }
-                  }}
-                  className={`min-h-[80px] sm:min-h-[92px] p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${!cDay.isCurrentMonth
-                      ? "bg-slate-50/50 border-slate-100/60 text-slate-300"
-                      : isSelected
-                        ? "bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs"
-                        : hasEvents
-                          ? "bg-indigo-50/40 border-indigo-200 hover:border-indigo-300 hover:shadow-xs"
-                          : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/60"
-                    }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center ${isToday
-                          ? "bg-slate-900 text-white font-bold"
-                          : isSelected
-                            ? "bg-indigo-600 text-white font-bold"
-                            : hasEvents
-                              ? "text-indigo-700 font-bold bg-indigo-100"
-                              : cDay.isCurrentMonth
-                                ? "text-slate-700"
-                                : "text-slate-400"
-                        }`}
-                    >
-                      {cDay.day}
-                    </span>
-                    {hasEvents && (
-                      <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                    )}
-                  </div>
-
-                  <div className="space-y-1 mt-1">
-                    {dayEvents.slice(0, 2).map((ev) => {
-                      const count = (assignments[ev.id] || []).length;
-                      return (
-                        <div
-                          key={ev.id}
-                          className="bg-indigo-600 text-white text-[10px] font-medium px-1.5 py-0.5 rounded truncate shadow-xs flex items-center justify-between gap-1"
-                          title={`${ev.eventName} (${ev.eventDate})`}
-                        >
-                          <span className="truncate">{ev.eventName}</span>
-                          {count > 0 && <span className="text-[8px] bg-indigo-700/80 px-1 rounded-sm shrink-0">{count}</span>}
-                        </div>
-                      );
-                    })}
-                    {dayEvents.length > 2 && (
-                      <span className="text-[9px] font-semibold text-indigo-600 block text-right">
-                        +{dayEvents.length - 2} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-display font-semibold text-sm text-slate-900 flex items-center gap-2">
-                <CalendarDays size={16} className="text-indigo-600" />
-                {selectedDate ? (
-                  <span>
-                    Activities on <span className="text-indigo-600">{selectedDate}</span>
-                  </span>
-                ) : (
-                  <span>
-                    {monthNames[month]} {year} Activities
-                  </span>
-                )}
-              </h3>
-              {selectedDate && (
-                <button
-                  onClick={() => setSelectedDate(null)}
-                  className="text-[11px] text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
-                >
-                  View All
-                </button>
-              )}
-            </div>
-
-            <div className="divide-y divide-slate-100 mt-2 max-h-[380px] overflow-y-auto">
-              {selectedEvents.length === 0 ? (
-                <div className="py-8 text-center text-slate-400 text-xs">
-                  <p className="font-medium">No activity on this date.</p>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Click "New Activity" to schedule or rotate seats.
-                  </p>
-                </div>
-              ) : (
-                selectedEvents.map((ev) => {
-                  const list = assignments[ev.id] || [];
-                  const deluxeCount = list.filter((a) => a.category === "Deluxe").length;
-                  const premiumCount = list.filter((a) => a.category === "Premium").length;
-                  const total = list.length;
-
-                  return (
-                    <div key={ev.id} className="py-3.5 space-y-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 leading-snug">
-                            {ev.eventName}
-                          </p>
-                          <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
-                            <Clock size={11} /> {ev.eventDate} · Activity #{ev.eventNumber}
-                          </p>
-                        </div>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
-                          {total} seats
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                          {deluxeCount} Deluxe
-                        </span>
-                        <span>·</span>
-                        <span className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          {premiumCount} Premium
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          onClick={() => onView(ev.id)}
-                          className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
-                        >
-                          <LayoutGrid size={13} /> View Seat Map
-                        </button>
-                        <button
-                          onClick={() => onExport(ev.id)}
-                          className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-                          title="Export CSV"
-                        >
-                          <Download size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-xs space-y-3">
-            <h4 className="font-display font-semibold text-xs text-slate-400 uppercase tracking-wider">
-              Activity Summary
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-800/80 rounded-xl p-3 border border-slate-700/50">
-                <p className="text-[11px] text-slate-400 font-medium">Total Held</p>
-                <p className="text-xl font-bold text-white mt-0.5">{events.length}</p>
-              </div>
-              <div className="bg-slate-800/80 rounded-xl p-3 border border-slate-700/50">
-                <p className="text-[11px] text-slate-400 font-medium">This Month</p>
-                <p className="text-xl font-bold text-indigo-400 mt-0.5">
-                  {
-                    events.filter((e) => {
-                      const d = new Date(e.eventDate);
-                      return d.getFullYear() === year && d.getMonth() === month;
-                    }).length
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Seat map page                                                       */
