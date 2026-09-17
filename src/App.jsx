@@ -392,7 +392,7 @@ export default function App() {
         }
       `}</style>
 
-      {/* ---------------- Mobile Menu Overlay ---------------- */}
+      {/*  Mobile Menu Overlay  */}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden"
@@ -942,9 +942,9 @@ function CalendarPage({ events, assignments, onView, onExport, onGenerate }) {
   const selectedEvents = selectedDate
     ? events.filter((e) => e.eventDate === selectedDate)
     : events.filter((e) => {
-        const d = new Date(e.eventDate);
-        return d.getFullYear() === year && d.getMonth() === month;
-      });
+      const d = new Date(e.eventDate);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
 
   return (
     <div className="space-y-6">
@@ -999,9 +999,8 @@ function CalendarPage({ events, assignments, onView, onExport, onGenerate }) {
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, idx) => (
               <div
                 key={day}
-                className={`text-[11px] font-bold uppercase tracking-wider py-1 ${
-                  idx === 0 || idx === 6 ? "text-slate-400" : "text-slate-600"
-                }`}
+                className={`text-[11px] font-bold uppercase tracking-wider py-1 ${idx === 0 || idx === 6 ? "text-slate-400" : "text-slate-600"
+                  }`}
               >
                 {day}
               </div>
@@ -1025,29 +1024,27 @@ function CalendarPage({ events, assignments, onView, onExport, onGenerate }) {
                       setSelectedDate(cDay.dateStr);
                     }
                   }}
-                  className={`min-h-[80px] sm:min-h-[92px] p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
-                    !cDay.isCurrentMonth
+                  className={`min-h-[80px] sm:min-h-[92px] p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${!cDay.isCurrentMonth
                       ? "bg-slate-50/50 border-slate-100/60 text-slate-300"
                       : isSelected
-                      ? "bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs"
-                      : hasEvents
-                      ? "bg-indigo-50/40 border-indigo-200 hover:border-indigo-300 hover:shadow-xs"
-                      : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/60"
-                  }`}
+                        ? "bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs"
+                        : hasEvents
+                          ? "bg-indigo-50/40 border-indigo-200 hover:border-indigo-300 hover:shadow-xs"
+                          : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/60"
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center ${
-                        isToday
+                      className={`text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center ${isToday
                           ? "bg-slate-900 text-white font-bold"
                           : isSelected
-                          ? "bg-indigo-600 text-white font-bold"
-                          : hasEvents
-                          ? "text-indigo-700 font-bold bg-indigo-100"
-                          : cDay.isCurrentMonth
-                          ? "text-slate-700"
-                          : "text-slate-400"
-                      }`}
+                            ? "bg-indigo-600 text-white font-bold"
+                            : hasEvents
+                              ? "text-indigo-700 font-bold bg-indigo-100"
+                              : cDay.isCurrentMonth
+                                ? "text-slate-700"
+                                : "text-slate-400"
+                        }`}
                     >
                       {cDay.day}
                     </span>
