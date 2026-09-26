@@ -85,13 +85,13 @@ function Toast({ toast }) {
   if (!toast) return null;
   const isError = toast.type === "error";
   return (
-    <div className="fixed bottom-6 right-6 z-50 no-print">
+    <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 no-print">
       <div
-        className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${isError ? "bg-red-50 border-red-200 text-red-700" : "bg-slate-900 border-slate-800 text-white"
+        className={`flex items-center justify-center sm:justify-start gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${isError ? "bg-red-50 border-red-200 text-red-700" : "bg-slate-900 border-slate-800 text-white"
           }`}
       >
-        {isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} className="text-emerald-400" />}
-        {toast.message}
+        {isError ? <AlertCircle size={16} className="shrink-0" /> : <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />}
+        <span className="truncate">{toast.message}</span>
       </div>
     </div>
   );
@@ -117,7 +117,22 @@ export default function App() {
     unsubs.push(subscribeToEvents(setEvents));
     unsubs.push(subscribeToAssignments(setAssignments));
 
-    return () => unsubs.forEach(u => u());
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIsMobileMenuOpen(false);
+        setShowAddModal(false);
+        setDeactivateTarget(null);
+        setPreviewModal(null);
+        setDeleteTarget(null);
+        setDeleteMemberTarget(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      unsubs.forEach(u => u());
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const [page, setPage] = useState("dashboard");
@@ -370,14 +385,14 @@ export default function App() {
 
   return (
     <div
-      className="h-screen bg-slate-50 text-slate-900 flex overflow-hidden"
+      className="h-screen h-dvh bg-slate-50 text-slate-900 flex overflow-hidden"
       style={{ fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
         .font-display { font-family: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, sans-serif; }
         .seat-scroll { scrollbar-width: thin; scrollbar-color: #CBD5E1 #F1F5F9; }
-        .seat-scroll::-webkit-scrollbar { height: 8px; }
+        .seat-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
         .seat-scroll::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 9999px; }
         .seat-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
         .seat-scroll::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
@@ -391,14 +406,14 @@ export default function App() {
       {/*  Mobile Menu Overlay  */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/*  Sidebar  */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col no-print transition-transform duration-300 shrink-0 lg:static lg:translate-x-0 h-full ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-200 shrink-0">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[80vw] bg-white border-r border-slate-200 flex flex-col no-print transition-transform duration-300 shrink-0 lg:static lg:translate-x-0 h-full ${isMobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
+        <div className="h-16 flex items-center gap-2.5 px-5 sm:px-6 border-b border-slate-200 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
             <Armchair size={16} className="text-white" />
           </div>
@@ -411,13 +426,14 @@ export default function App() {
             </span>
           </div>
           <button
-            className="lg:hidden ml-auto text-slate-400 hover:text-slate-600"
+            className="lg:hidden ml-auto p-1.5 text-slate-400 hover:text-slate-600 cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close menu"
           >
             <X size={18} />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-1">
           {NAV.map((item) => {
             const Icon = item.icon;
             const active = page === item.key;
@@ -428,7 +444,7 @@ export default function App() {
                   setPage(item.key);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${active ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${active ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
                   }`}
               >
                 <Icon size={17} />
@@ -453,29 +469,30 @@ export default function App() {
       </aside>
 
       {/*  Main  */}
-      <main className="flex-1 min-w-0 print-area flex flex-col h-screen overflow-y-auto">
+      <main className="flex-1 min-w-0 print-area flex flex-col h-screen h-dvh overflow-y-auto">
         <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 lg:px-8 no-print sticky top-0 z-30 shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900"
+              className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900 cursor-pointer shrink-0"
               onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Open menu"
             >
               <Menu size={20} />
             </button>
-            <h1 className="font-display font-semibold text-lg tracking-tight">
+            <h1 className="font-display font-semibold text-base sm:text-lg tracking-tight truncate">
               {NAV.find((n) => n.key === page)?.label}
             </h1>
           </div>
           {lastEvent && (
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <CalendarDays size={14} className="shrink-0" />
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-400 shrink-0">
+              <CalendarDays size={14} className="shrink-0 text-slate-400" />
               <span className="hidden sm:inline">Last activity: {lastEvent.eventName} · {lastEvent.eventDate}</span>
-              <span className="sm:hidden truncate max-w-[100px]">{lastEvent.eventName}</span>
+              <span className="sm:hidden truncate max-w-[120px] text-[11px]">{lastEvent.eventName}</span>
             </div>
           )}
         </header>
 
-        <div className="px-4 lg:px-8 py-6 max-w-6xl w-full mx-auto">
+        <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-6xl w-full mx-auto">
           {page === "dashboard" && (
             <Dashboard
               activeDeluxe={activeDeluxe}
@@ -593,15 +610,15 @@ export default function App() {
 
 function Dashboard({ activeDeluxe, activePremium, structures, eventsCount, lastEvent, onGoto }) {
   return (
-    <div className="space-y-7">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-6 sm:space-y-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label="Active Deluxe" value={activeDeluxe} sub={`of ${structures.Deluxe.total} seats · rows B–F`} icon={Users} accent="bg-indigo-100 text-indigo-700" />
         <StatCard label="Active Premium" value={activePremium} sub={`of ${structures.Premium.total} seats · rows G–L`} icon={Users} accent="bg-emerald-100 text-emerald-700" />
         <StatCard label="Activities held" value={eventsCount} sub="Calculator Activity" icon={RefreshCw} accent="bg-amber-100 text-amber-700" />
         <StatCard label="Latest activity" value={lastEvent ? `#${lastEvent.eventNumber}` : "—"} sub={lastEvent?.eventDate || "Not started"} icon={CalendarDays} accent="bg-slate-200 text-slate-700" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         <QuickAction
           icon={Users}
           title="Manage members"
@@ -625,7 +642,7 @@ function Dashboard({ activeDeluxe, activePremium, structures, eventsCount, lastE
         />
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-6">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs">
         <h3 className="font-display font-semibold text-sm mb-3">How the rotation works</h3>
         <p className="text-sm text-slate-500 leading-relaxed max-w-2xl">
           For the first Calculator Activity, every member sits in their default seat. From the second
@@ -641,7 +658,7 @@ function Dashboard({ activeDeluxe, activePremium, structures, eventsCount, lastE
 
 function QuickAction({ icon: Icon, title, desc, cta, onClick }) {
   return (
-    <button onClick={onClick} className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover:border-slate-300 hover:shadow-sm transition-all group">
+    <button onClick={onClick} className="text-left bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 hover:border-slate-300 hover:shadow-xs transition-all group cursor-pointer">
       <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center mb-3 group-hover:bg-slate-900 group-hover:text-white transition-colors">
         <Icon size={16} />
       </div>
@@ -664,22 +681,22 @@ function MembersPage({
 }) {
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto shrink-0">
           {["All", "Deluxe", "Premium"].map((c) => (
             <button
               key={c}
               onClick={() => setCategoryFilter(c)}
-              className={`whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors ${categoryFilter === c ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+              className={`whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${categoryFilter === c ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                 }`}
             >
               {c}
             </button>
           ))}
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           <div className="relative w-full sm:w-auto">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -689,51 +706,51 @@ function MembersPage({
           </div>
           <button
             onClick={onAdd}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 w-full sm:w-auto shrink-0"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 w-full sm:w-auto shrink-0 cursor-pointer"
           >
             <Plus size={15} /> Add Member
           </button>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+        <div className="w-full overflow-x-auto seat-scroll">
+          <table className="w-full text-sm min-w-[580px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
-                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Name</th>
-                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Mobile</th>
-                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Category</th>
-                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Current Seat</th>
-                <th className="text-left font-medium px-5 py-3 whitespace-nowrap">Status</th>
-                <th className="text-right font-medium px-5 py-3 whitespace-nowrap">Action</th>
+                <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Name</th>
+                <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Mobile</th>
+                <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Category</th>
+                <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Current Seat</th>
+                <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Status</th>
+                <th className="text-right font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Action</th>
               </tr>
             </thead>
             <tbody>
               {members.map((m) => (
                 <tr key={m.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-                  <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap min-w-[150px]">{m.name}</td>
-                  <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{m.phone}</td>
-                  <td className="px-5 py-3 whitespace-nowrap"><CategoryChip category={m.category} /></td>
-                  <td className="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">
+                  <td className="px-4 sm:px-5 py-3 font-medium text-slate-800 whitespace-nowrap min-w-[130px]">{m.name}</td>
+                  <td className="px-4 sm:px-5 py-3 text-slate-500 whitespace-nowrap font-mono text-xs">{m.phone}</td>
+                  <td className="px-4 sm:px-5 py-3 whitespace-nowrap"><CategoryChip category={m.category} /></td>
+                  <td className="px-4 sm:px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">
                     {m.status === "active" ? seatLabelForMember(m, currentEventId) : "—"}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
+                  <td className="px-4 sm:px-5 py-3 whitespace-nowrap">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${m.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                       {m.status === "active" ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right whitespace-nowrap">
+                  <td className="px-4 sm:px-5 py-3 text-right whitespace-nowrap">
                     {m.status === "active" ? (
-                      <button onClick={() => onDeactivate(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700">
+                      <button onClick={() => onDeactivate(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 cursor-pointer">
                         <UserX size={14} /> Deactivate
                       </button>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
-                        <button onClick={() => onReactivate(m.id)} className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900">
+                        <button onClick={() => onReactivate(m.id)} className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 cursor-pointer">
                           <UserCheck size={14} /> Reactivate
                         </button>
-                        <button onClick={() => onDelete(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700">
+                        <button onClick={() => onDelete(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 cursor-pointer">
                           <Trash2 size={14} /> Delete
                         </button>
                       </div>
@@ -743,7 +760,7 @@ function MembersPage({
               ))}
               {members.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-slate-400 text-sm">No members match your search.</td>
+                  <td colSpan={6} className="px-4 sm:px-5 py-10 text-center text-slate-400 text-sm">No members match your search.</td>
                 </tr>
               )}
             </tbody>
@@ -763,13 +780,13 @@ function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onD
   const nextEventNumber = events.length === 0 ? 1 : Math.max(...events.map((e) => e.eventNumber)) + 1;
   return (
     <div className="space-y-6">
-      <div className="bg-slate-900 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between text-white gap-5">
+      <div className="bg-slate-900 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between text-white gap-4 sm:gap-5 shadow-xs">
         <div>
           <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Next step</p>
-          <h3 className="font-display font-semibold text-lg">
+          <h3 className="font-display font-semibold text-base sm:text-lg">
             {events.length === 0 ? "Generate seats for Activity #1" : `Generate seats for Activity #${nextEventNumber}`}
           </h3>
-          <p className="text-sm text-slate-400 mt-1 max-w-md">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md">
             {events.length === 0
               ? "Assign every active member their default seat to kick off the rotation."
               : "Shift every active member forward one seat within their category. You'll preview the changes before saving."}
@@ -777,7 +794,7 @@ function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onD
         </div>
         <button
           onClick={onGenerate}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 text-sm font-semibold hover:bg-slate-100 shrink-0 w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 text-sm font-semibold hover:bg-slate-100 shrink-0 w-full sm:w-auto cursor-pointer"
         >
           Generate Next Activity Seats
         </button>
@@ -789,24 +806,24 @@ function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onD
           const deluxeCount = list.filter((a) => a.category === "Deluxe").length;
           const premiumCount = list.filter((a) => a.category === "Premium").length;
           return (
-            <div key={ev.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div key={ev.id} className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-xs">
               <div>
                 <p className="font-semibold text-sm text-slate-900">{ev.eventName}</p>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 text-xs text-slate-500">
-                  <span className="flex items-center gap-1 whitespace-nowrap"><CalendarDays size={13} /> {ev.eventDate}</span>
+                  <span className="flex items-center gap-1 whitespace-nowrap"><CalendarDays size={13} className="text-slate-400" /> {ev.eventDate}</span>
                   <span className="whitespace-nowrap">{deluxeCount} Deluxe</span>
                   <span className="hidden sm:inline">·</span>
                   <span className="whitespace-nowrap">{premiumCount} Premium</span>
                 </div>
               </div>
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                <button onClick={() => onExport(ev.id)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+                <button onClick={() => onExport(ev.id)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap cursor-pointer">
                   <Download size={13} /> Export CSV
                 </button>
-                <button onClick={() => onView(ev.id)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 whitespace-nowrap">
+                <button onClick={() => onView(ev.id)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 whitespace-nowrap cursor-pointer">
                   <LayoutGrid size={13} /> View Seat Map
                 </button>
-                <button onClick={() => onDelete(ev)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-xs font-medium text-red-600 hover:bg-red-50 whitespace-nowrap">
+                <button onClick={() => onDelete(ev)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-xs font-medium text-red-600 hover:bg-red-50 whitespace-nowrap cursor-pointer">
                   <Trash2 size={13} /> Delete
                 </button>
               </div>
@@ -835,14 +852,14 @@ function SeatMapPage({ events, assignments, structures, selectedEventId, setSele
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 no-print">
         {currentEvent ? (
           <div className="relative w-full sm:w-auto">
             <select
               value={currentEvent.id}
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="appearance-none w-full sm:w-auto pl-4 pr-9 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+              className="appearance-none w-full sm:w-auto pl-4 pr-9 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900/10 cursor-pointer shadow-xs"
             >
               {sorted.map((ev) => (
                 <option key={ev.id} value={ev.id}>{ev.eventName} · {ev.eventDate}</option>
@@ -855,11 +872,11 @@ function SeatMapPage({ events, assignments, structures, selectedEventId, setSele
         )}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {currentEvent && (
-            <button onClick={() => onExport(currentEvent.id)} className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap">
+            <button onClick={() => onExport(currentEvent.id)} className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap cursor-pointer shadow-xs">
               <Download size={14} /> Export CSV
             </button>
           )}
-          <button onClick={() => window.print()} className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap">
+          <button onClick={() => window.print()} className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-300 whitespace-nowrap cursor-pointer shadow-xs">
             <Printer size={14} /> Print
           </button>
         </div>
@@ -894,9 +911,22 @@ function HallDiagram({ structures, seatOccupant }) {
   const filledDeluxe = structures.Deluxe.flat.filter((l) => seatOccupant("Deluxe", l)).length;
   const filledPremium = structures.Premium.flat.filter((l) => seatOccupant("Premium", l)).length;
 
+  const handleSeatInteraction = (e, label, occupant, category) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tooltipX = Math.max(85, Math.min(window.innerWidth - 85, rect.left + rect.width / 2));
+    const tooltipY = Math.max(65, rect.top - 8);
+    setHoveredSeat({
+      label,
+      occupant,
+      category,
+      x: tooltipX,
+      y: tooltipY,
+    });
+  };
+
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 relative">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 mb-2">
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 relative shadow-xs" onClick={() => setHoveredSeat(null)}>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-5 mb-2">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <CategoryChip category="Deluxe" /><span>{filledDeluxe}/{structures.Deluxe.total} filled · rows B–F</span>
         </div>
@@ -916,7 +946,7 @@ function HallDiagram({ structures, seatOccupant }) {
               <React.Fragment key={row}>
                 <div className="flex items-center" style={{ gap: 12 }}>
                   <span
-                    className="text-xs font-semibold text-slate-400 text-right bg-white sticky left-0 z-10"
+                    className="text-xs font-semibold text-slate-400 text-right bg-white sticky left-0 z-10 select-none"
                     style={{ width: ROW_LABEL_W }}
                   >
                     {row}
@@ -932,18 +962,13 @@ function HallDiagram({ structures, seatOccupant }) {
                             height: 24,
                             cursor: `url(${seatIcon}) 16 16, pointer`
                           }}
-                          onMouseEnter={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setHoveredSeat({
-                              label,
-                              occupant,
-                              category,
-                              x: rect.left + window.scrollX + rect.width / 2,
-                              y: rect.top + window.scrollY - 8,
-                            });
-                          }}
+                          onMouseEnter={(e) => handleSeatInteraction(e, label, occupant, category)}
                           onMouseLeave={() => setHoveredSeat(null)}
-                          className={`rounded-md border flex items-center justify-center font-mono font-semibold text-[9px] shrink-0 transition-all duration-150 hover:scale-110 ${occupant ? s.seatFilled : "border-dashed border-slate-300 text-slate-400 bg-slate-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSeatInteraction(e, label, occupant, category);
+                          }}
+                          className={`rounded-md border flex items-center justify-center font-mono font-semibold text-[9px] shrink-0 transition-all duration-150 hover:scale-110 select-none ${occupant ? s.seatFilled : "border-dashed border-slate-300 text-slate-400 bg-slate-50"
                             }`}
                         >
                           {label.replace(/[A-Z]/g, "")}
@@ -951,14 +976,14 @@ function HallDiagram({ structures, seatOccupant }) {
                       );
                     })}
                   </div>
-                  <span className="text-xs font-semibold text-slate-400 shrink-0" style={{ width: COUNT_LABEL_W }}>
+                  <span className="text-xs font-semibold text-slate-400 shrink-0 select-none" style={{ width: COUNT_LABEL_W }}>
                     {labels.length}
                   </span>
                 </div>
                 {row === WALKWAY_AFTER_ROW && (
                   <div style={{ width: innerWidth }} className="flex items-center gap-3 py-1.5">
                     <div className="flex-1 border-t border-dashed border-slate-300" />
-                    <span className="text-[9px] tracking-[0.25em] text-slate-400 font-semibold shrink-0">WALKWAY</span>
+                    <span className="text-[9px] tracking-[0.25em] text-slate-400 font-semibold shrink-0 select-none">WALKWAY</span>
                     <div className="flex-1 border-t border-dashed border-slate-300" />
                   </div>
                 )}
@@ -980,18 +1005,18 @@ function HallDiagram({ structures, seatOccupant }) {
             pointerEvents: "none",
             zIndex: 100,
           }}
-          className="bg-slate-900/95 backdrop-blur text-white rounded-xl shadow-xl px-3.5 py-2.5 text-xs border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-150 min-w-[150px] flex flex-col gap-1.5"
+          className="bg-slate-900/95 backdrop-blur text-white rounded-xl shadow-xl px-3.5 py-2.5 text-xs border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-150 min-w-[140px] max-w-[280px] flex flex-col gap-1.5"
         >
-          <div className="flex justify-between items-center gap-4">
-            <span className="font-semibold text-slate-100 font-display text-[13px]">
+          <div className="flex justify-between items-center gap-3">
+            <span className="font-semibold text-slate-100 font-display text-[13px] truncate">
               {hoveredSeat.occupant || "Empty Seat"}
             </span>
-            <span className="text-[10px] bg-slate-800 text-slate-300 font-mono px-1.5 py-0.5 rounded font-bold border border-slate-700">
+            <span className="text-[10px] bg-slate-800 text-slate-300 font-mono px-1.5 py-0.5 rounded font-bold border border-slate-700 shrink-0">
               {hoveredSeat.label}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${hoveredSeat.category === "Deluxe" ? "bg-indigo-500" : "bg-emerald-500"
+            <span className={`w-2 h-2 rounded-full shrink-0 ${hoveredSeat.category === "Deluxe" ? "bg-indigo-500" : "bg-emerald-500"
               }`} />
             <span className="text-[10px] text-slate-400 font-medium">
               {hoveredSeat.category} Seat
@@ -1009,8 +1034,8 @@ function HallDiagram({ structures, seatOccupant }) {
 
 function ModalShell({ children, onClose, wide }) {
   return (
-    <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-40 p-4 no-print">
-      <div className={`bg-white rounded-2xl shadow-xl w-full ${wide ? "max-w-2xl" : "max-w-sm"} max-h-[85vh] overflow-hidden flex flex-col`}>
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-3 sm:p-4 no-print overflow-y-auto">
+      <div className={`bg-white rounded-2xl shadow-xl w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90dvh] max-h-[90vh] overflow-hidden flex flex-col my-auto`}>
         {children}
       </div>
     </div>
@@ -1035,11 +1060,11 @@ function AddMemberModal({ onClose, onSubmit, structures, members }) {
 
   return (
     <ModalShell onClose={onClose}>
-      <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+      <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
         <h3 className="font-display font-semibold text-base">Add member</h3>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 cursor-pointer p-1"><X size={18} /></button>
       </div>
-      <div className="px-6 py-5 space-y-4">
+      <div className="px-5 sm:px-6 py-4 sm:py-5 space-y-4 overflow-y-auto">
         <div>
           <label className="text-xs font-medium text-slate-500 mb-1.5 block">Name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
@@ -1055,7 +1080,7 @@ function AddMemberModal({ onClose, onSubmit, structures, members }) {
               <button
                 key={c}
                 onClick={() => setCategory(c)}
-                className={`flex-1 px-3 py-2.5 rounded-lg border text-sm font-medium ${category === c ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600"
+                className={`flex-1 px-3 py-2.5 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${category === c ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
               >
                 {c}
@@ -1064,11 +1089,11 @@ function AddMemberModal({ onClose, onSubmit, structures, members }) {
           </div>
           <p className="text-[11px] text-slate-400 mt-1.5">{activeCount}/{structures[category].total} seats currently used. New member is placed in the next open seat.</p>
         </div>
-        {error && <p className="text-xs text-red-600 flex items-center gap-1"><AlertCircle size={13} />{error}</p>}
+        {error && <p className="text-xs text-red-600 flex items-center gap-1"><AlertCircle size={13} className="shrink-0" />{error}</p>}
       </div>
-      <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
-        <button onClick={submit} className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800">Add member</button>
+      <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t border-slate-100 flex justify-end gap-2 shrink-0 bg-slate-50/50">
+        <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 cursor-pointer">Cancel</button>
+        <button onClick={submit} className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 cursor-pointer">Add member</button>
       </div>
     </ModalShell>
   );
@@ -1077,15 +1102,15 @@ function AddMemberModal({ onClose, onSubmit, structures, members }) {
 function ConfirmModal({ title, message, confirmLabel, tone = "default", onCancel, onConfirm }) {
   return (
     <ModalShell onClose={onCancel}>
-      <div className="px-6 py-5">
+      <div className="px-5 sm:px-6 py-4 sm:py-5">
         <h3 className="font-display font-semibold text-base mb-2">{title}</h3>
         <p className="text-sm text-slate-500 leading-relaxed">{message}</p>
       </div>
-      <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
-        <button onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+      <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t border-slate-100 flex justify-end gap-2 shrink-0 bg-slate-50/50">
+        <button onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 cursor-pointer">Cancel</button>
         <button
           onClick={onConfirm}
-          className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${tone === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-slate-900 hover:bg-slate-800"}`}
+          className={`px-4 py-2 rounded-lg text-sm font-medium text-white cursor-pointer ${tone === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-slate-900 hover:bg-slate-800"}`}
         >
           {confirmLabel}
         </button>
@@ -1140,22 +1165,22 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
 
   return (
     <ModalShell onClose={onCancel} wide>
-      <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+      <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div>
-          <h3 className="font-display font-semibold text-base">New Calculator Activity #{eventNumber}</h3>
-          <p className="text-xs text-slate-500 mt-0.5">{selectedIds.size} of {rows.length} members selected · set details and review seats before saving.</p>
+          <h3 className="font-display font-semibold text-sm sm:text-base">New Calculator Activity #{eventNumber}</h3>
+          <p className="text-xs text-slate-500 mt-0.5">{selectedIds.size} of {rows.length} members selected · review before saving.</p>
         </div>
-        <button onClick={onCancel} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
+        <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"><X size={18} /></button>
       </div>
-      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60" onKeyDown={handleKeyDown}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/60 shrink-0" onKeyDown={handleKeyDown}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label className="text-xs font-medium text-slate-500 mb-1.5 block">Activity name</label>
             <input
               value={eventName}
               onChange={(e) => { setEventName(e.target.value); setError(""); }}
               placeholder="e.g. Monthly Calculator Session"
-              className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+              className="w-full px-3 py-2 sm:py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
             />
           </div>
           <div>
@@ -1164,17 +1189,17 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
               type="date"
               value={eventDate}
               onChange={(e) => { setEventDate(e.target.value); setError(""); }}
-              className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+              className="w-full px-3 py-2 sm:py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
             />
           </div>
         </div>
-        {error && <p className="text-xs text-red-600 flex items-center gap-1 mt-2"><AlertCircle size={13} />{error}</p>}
+        {error && <p className="text-xs text-red-600 flex items-center gap-1 mt-2"><AlertCircle size={13} className="shrink-0" />{error}</p>}
       </div>
-      <div className="overflow-auto px-6 py-4 max-h-[60vh]">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-white z-10">
+      <div className="overflow-auto seat-scroll px-4 sm:px-6 py-2 sm:py-4 max-h-[50vh]">
+        <table className="w-full text-sm min-w-[340px]">
+          <thead className="sticky top-0 bg-white z-10 shadow-xs">
             <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
-              <th className="py-2 w-10 px-2">
+              <th className="py-2 w-8 sm:w-10 px-1 sm:px-2">
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -1185,7 +1210,7 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
                   className="rounded border-slate-300 accent-slate-900 h-4 w-4 cursor-pointer"
                 />
               </th>
-              <th className="py-2 font-medium whitespace-nowrap min-w-[120px]">Name</th>
+              <th className="py-2 font-medium whitespace-nowrap min-w-[100px]">Name</th>
               <th className="py-2 font-medium whitespace-nowrap">Category</th>
               {!isFirst && <th className="py-2 font-medium whitespace-nowrap">Previous seat</th>}
               <th className="py-2 font-medium whitespace-nowrap">New seat</th>
@@ -1196,7 +1221,7 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
               const isSelected = selectedIds.has(r.userId);
               return (
                 <tr key={r.userId} className={`border-b border-slate-50 hover:bg-slate-50/50 ${!isSelected ? "opacity-50" : ""}`}>
-                  <td className="py-2 px-2">
+                  <td className="py-2 px-1 sm:px-2">
                     <input
                       type="checkbox"
                       checked={isSelected}
@@ -1204,7 +1229,7 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
                       className="rounded border-slate-300 accent-slate-900 h-4 w-4 cursor-pointer"
                     />
                   </td>
-                  <td className="py-2 font-medium text-slate-800 whitespace-nowrap">{r.userName}</td>
+                  <td className="py-2 font-medium text-slate-800 whitespace-nowrap text-xs sm:text-sm">{r.userName}</td>
                   <td className="py-2 whitespace-nowrap"><CategoryChip category={r.category} /></td>
                   {!isFirst && <td className="py-2 font-mono text-xs text-slate-400 whitespace-nowrap">{r.previousSeat}</td>}
                   <td className="py-2 font-mono text-xs font-semibold text-slate-800 whitespace-nowrap">
@@ -1217,9 +1242,9 @@ function GeneratePreviewModal({ data, onCancel, onConfirm }) {
           </tbody>
         </table>
       </div>
-      <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 shrink-0">
-        <button onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
-        <button onClick={handleConfirm} className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800">Confirm &amp; save</button>
+      <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t border-slate-100 flex justify-end gap-2 shrink-0 bg-slate-50/50">
+        <button onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 cursor-pointer">Cancel</button>
+        <button onClick={handleConfirm} className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 cursor-pointer">Confirm &amp; save</button>
       </div>
     </ModalShell>
   );
