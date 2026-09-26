@@ -212,7 +212,7 @@ export default function App() {
     showToast("Member deleted");
   };
 
-  /* ---------------- rotation actions ---------------- */
+  /* rotation actions*/
 
   const openGeneratePreview = () => {
     const isFirst = events.length === 0;
