@@ -4,13 +4,13 @@ import { collection, doc, setDoc } from 'firebase/firestore';
 
 async function upload() {
   console.log(`Starting upload of ${REAL_MEMBERS.length} members...`);
-  
+
   let success = 0;
   let errors = 0;
 
   for (const member of REAL_MEMBERS) {
     try {
-      // Use member.id as the document ID in Firestore for consistency
+
       const docRef = doc(db, 'members', member.id);
       await setDoc(docRef, member);
       success++;
