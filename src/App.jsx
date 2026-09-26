@@ -151,7 +151,7 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  /* ---------------- member actions ---------------- */
+  /*  member actions */
 
   const addMember = async ({ name, phone, category }) => {
     const activeCount = members.filter((m) => m.category === category && m.status === "active").length;
