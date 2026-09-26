@@ -8,21 +8,21 @@ const __dirname = path.dirname(__filename);
 const parseCSV = (filePath, category, idPrefix) => {
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split('\n').map(l => l.trim()).filter(l => l);
-  
+
   const members = [];
-  
+
   // Skip header (first line)
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
     // Split by comma, handling potential quotes if any
     const parts = line.split(',');
-    
+
     if (parts.length >= 4) {
       const id = parts[0].trim();
       const name = parts[1].trim();
       const phone = parts[2].trim();
       const seat = parts[3] ? parts[3].trim() : '';
-      
+
       if (name && id) {
         members.push({
           id: `${category === "Deluxe" ? "D" : "P"}-${id}`,
@@ -30,14 +30,13 @@ const parseCSV = (filePath, category, idPrefix) => {
           phone: phone,
           category: category,
           initialSeatCode: seat,
-          // We will calculate indices later
           status: "active",
           createdAt: new Date().toISOString()
         });
       }
     }
   }
-  
+
   return members;
 };
 
