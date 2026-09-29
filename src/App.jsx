@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Loader2,
   Trash2,
-  Menu
+  Menu,
+  Pencil
 } from "lucide-react";
 import {
   subscribeToMembers,
@@ -122,6 +123,7 @@ export default function App() {
         setIsMobileMenuOpen(false);
         setShowAddModal(false);
         setDeactivateTarget(null);
+        setEditMemberTarget(null);
         setPreviewModal(null);
         setDeleteTarget(null);
         setDeleteMemberTarget(null);
@@ -138,6 +140,7 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [toast, setToast] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editMemberTarget, setEditMemberTarget] = useState(null);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
   const [previewModal, setPreviewModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -151,9 +154,9 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  /*  member actions */
+  /* ---------------- member actions ---------------- */
 
-  const addMember = async ({ name, phone, category }) => {
+  const addMember = async ({ name, phone, address, category }) => {
     const activeCount = members.filter((m) => m.category === category && m.status === "active").length;
     if (activeCount >= structures[category].total) {
       showToast(`No seats left in ${category} (capacity ${structures[category].total})`, "error");
@@ -163,6 +166,7 @@ export default function App() {
       id: `${category === "Deluxe" ? "D" : "P"}-${Date.now()}`,
       name: name.trim(),
       phone: phone.trim(),
+      address: address ? address.trim() : "",
       category,
       initialSeatIndex: activeCount,
       currentSeatIndex: activeCount,
@@ -172,6 +176,21 @@ export default function App() {
     await addMemberToDb(newMember);
     setShowAddModal(false);
     showToast(`${newMember.name} added to ${category}`);
+  };
+
+  const editMember = async ({ id, name, phone, address }) => {
+    try {
+      await updateMemberInDb(id, {
+        name: name.trim(),
+        phone: phone.trim(),
+        address: address ? address.trim() : "",
+      });
+      setEditMemberTarget(null);
+      showToast("Member updated successfully");
+    } catch (err) {
+      console.error("Failed to update member:", err);
+      showToast("Failed to update member", "error");
+    }
   };
 
   const deactivateMember = async (id) => {
@@ -322,10 +341,10 @@ export default function App() {
       if (a.category !== b.category) return a.category.localeCompare(b.category);
       return a.assignedSeat.localeCompare(b.assignedSeat);
     });
-    const header = ["Name", "Phone", "Category", "Seat"];
+    const header = ["Name", "Number", "Address", "Category", "Seat No"];
     const body = rows.map((r) => {
       const member = members.find((m) => m.id === r.userId);
-      return [r.userName, member ? member.phone : "", r.category, r.assignedSeat];
+      return [r.userName, member ? member.phone : "", member?.address || "", r.category, r.assignedSeat];
     });
     const csv = [header, ...body]
       .map((r) => r.map((f) => `"${String(f).replace(/"/g, '""')}"`).join(","))
@@ -348,7 +367,11 @@ export default function App() {
       .filter((m) => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) return true;
-        return m.name.toLowerCase().includes(q) || m.phone.includes(q);
+        return (
+          m.name.toLowerCase().includes(q) ||
+          (m.phone && m.phone.includes(q)) ||
+          (m.address && m.address.toLowerCase().includes(q))
+        );
       })
       .sort((a, b) => {
         if (a.status !== b.status) return a.status === "active" ? -1 : 1;
@@ -513,6 +536,7 @@ export default function App() {
               categoryFilter={categoryFilter}
               setCategoryFilter={setCategoryFilter}
               onAdd={() => setShowAddModal(true)}
+              onEdit={(m) => setEditMemberTarget(m)}
               onDeactivate={(m) => setDeactivateTarget(m)}
               onReactivate={reactivateMember}
               onDelete={(m) => setDeleteMemberTarget(m)}
@@ -553,6 +577,14 @@ export default function App() {
       {/*  Modals  */}
       {showAddModal && (
         <AddMemberModal onClose={() => setShowAddModal(false)} onSubmit={addMember} structures={structures} members={members} />
+      )}
+
+      {editMemberTarget && (
+        <EditMemberModal
+          member={editMemberTarget}
+          onClose={() => setEditMemberTarget(null)}
+          onSubmit={editMember}
+        />
       )}
 
       {deactivateTarget && (
@@ -677,7 +709,7 @@ function QuickAction({ icon: Icon, title, desc, cta, onClick }) {
 
 function MembersPage({
   members, structures, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter,
-  onAdd, onDeactivate, onReactivate, onDelete, currentEventId, seatLabelForMember,
+  onAdd, onEdit, onDeactivate, onReactivate, onDelete, currentEventId, seatLabelForMember,
 }) {
   return (
     <div className="space-y-5">
@@ -700,7 +732,7 @@ function MembersPage({
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search name or mobile"
+              placeholder="Search name, mobile or address"
               className="pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-white w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
             />
           </div>
@@ -715,11 +747,12 @@ function MembersPage({
 
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
         <div className="w-full overflow-x-auto seat-scroll">
-          <table className="w-full text-sm min-w-[580px]">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
                 <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Name</th>
                 <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Mobile</th>
+                <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Address</th>
                 <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Category</th>
                 <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Current Seat</th>
                 <th className="text-left font-medium px-4 sm:px-5 py-3 whitespace-nowrap">Status</th>
@@ -731,6 +764,7 @@ function MembersPage({
                 <tr key={m.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
                   <td className="px-4 sm:px-5 py-3 font-medium text-slate-800 whitespace-nowrap min-w-[130px]">{m.name}</td>
                   <td className="px-4 sm:px-5 py-3 text-slate-500 whitespace-nowrap font-mono text-xs">{m.phone}</td>
+                  <td className="px-4 sm:px-5 py-3 text-slate-500 whitespace-nowrap text-xs max-w-[180px] truncate" title={m.address || ""}>{m.address || "—"}</td>
                   <td className="px-4 sm:px-5 py-3 whitespace-nowrap"><CategoryChip category={m.category} /></td>
                   <td className="px-4 sm:px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">
                     {m.status === "active" ? seatLabelForMember(m, currentEventId) : "—"}
@@ -741,26 +775,31 @@ function MembersPage({
                     </span>
                   </td>
                   <td className="px-4 sm:px-5 py-3 text-right whitespace-nowrap">
-                    {m.status === "active" ? (
-                      <button onClick={() => onDeactivate(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 cursor-pointer">
-                        <UserX size={14} /> Deactivate
+                    <div className="flex items-center justify-end gap-2.5">
+                      <button onClick={() => onEdit(m)} className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 cursor-pointer">
+                        <Pencil size={13} /> Edit
                       </button>
-                    ) : (
-                      <div className="flex items-center justify-end gap-3">
-                        <button onClick={() => onReactivate(m.id)} className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 cursor-pointer">
-                          <UserCheck size={14} /> Reactivate
+                      {m.status === "active" ? (
+                        <button onClick={() => onDeactivate(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 cursor-pointer">
+                          <UserX size={13} /> Deactivate
                         </button>
-                        <button onClick={() => onDelete(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 cursor-pointer">
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      </div>
-                    )}
+                      ) : (
+                        <>
+                          <button onClick={() => onReactivate(m.id)} className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 cursor-pointer">
+                            <UserCheck size={13} /> Reactivate
+                          </button>
+                          <button onClick={() => onDelete(m)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 cursor-pointer">
+                            <Trash2 size={13} /> Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
               {members.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 sm:px-5 py-10 text-center text-slate-400 text-sm">No members match your search.</td>
+                  <td colSpan={7} className="px-4 sm:px-5 py-10 text-center text-slate-400 text-sm">No members match your search.</td>
                 </tr>
               )}
             </tbody>
@@ -1045,6 +1084,7 @@ function ModalShell({ children, onClose, wide }) {
 function AddMemberModal({ onClose, onSubmit, structures, members }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [category, setCategory] = useState("Deluxe");
   const [error, setError] = useState("");
 
@@ -1055,7 +1095,7 @@ function AddMemberModal({ onClose, onSubmit, structures, members }) {
     if (!name.trim()) return setError("Enter a name.");
     if (!phone.trim() || phone.trim().length < 7) return setError("Enter a valid mobile number.");
     if (full) return setError(`${category} is at full capacity.`);
-    onSubmit({ name, phone, category });
+    onSubmit({ name, phone, address, category });
   };
 
   return (
@@ -1072,6 +1112,10 @@ function AddMemberModal({ onClose, onSubmit, structures, members }) {
         <div>
           <label className="text-xs font-medium text-slate-500 mb-1.5 block">Mobile</label>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit mobile number" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-500 mb-1.5 block">Address (Optional)</label>
+          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Member address" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
         </div>
         <div>
           <label className="text-xs font-medium text-slate-500 mb-1.5 block">Category</label>
@@ -1094,6 +1138,70 @@ function AddMemberModal({ onClose, onSubmit, structures, members }) {
       <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t border-slate-100 flex justify-end gap-2 shrink-0 bg-slate-50/50">
         <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 cursor-pointer">Cancel</button>
         <button onClick={submit} className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 cursor-pointer">Add member</button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function EditMemberModal({ member, onClose, onSubmit }) {
+  const [name, setName] = useState(member?.name || "");
+  const [phone, setPhone] = useState(member?.phone || "");
+  const [address, setAddress] = useState(member?.address || "");
+  const [error, setError] = useState("");
+
+  const submit = () => {
+    if (!name.trim()) return setError("Enter a name.");
+    if (!phone.trim() || phone.trim().length < 7) return setError("Enter a valid mobile number.");
+    onSubmit({ id: member.id, name, phone, address });
+  };
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div>
+          <h3 className="font-display font-semibold text-base">Edit member</h3>
+          <p className="text-xs text-slate-400 mt-0.5">{member?.category} Member</p>
+        </div>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 cursor-pointer p-1"><X size={18} /></button>
+      </div>
+      <div className="px-5 sm:px-6 py-4 sm:py-5 space-y-4 overflow-y-auto">
+        <div>
+          <label className="text-xs font-medium text-slate-500 mb-1.5 block">Name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Full name"
+            className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-500 mb-1.5 block">Mobile</label>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="10-digit mobile number"
+            className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-500 mb-1.5 block">Address (Optional)</label>
+          <input
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Member address"
+            className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+          />
+        </div>
+        {error && (
+          <p className="text-xs text-red-600 flex items-center gap-1">
+            <AlertCircle size={13} className="shrink-0" />
+            {error}
+          </p>
+        )}
+      </div>
+      <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t border-slate-100 flex justify-end gap-2 shrink-0 bg-slate-50/50">
+        <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 cursor-pointer">Cancel</button>
+        <button onClick={submit} className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 cursor-pointer">Save changes</button>
       </div>
     </ModalShell>
   );
