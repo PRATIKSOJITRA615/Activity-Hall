@@ -48,13 +48,12 @@ function parseCSVRows(text) {
   return rows;
 }
 
-const parseCSV = (filePath, category, idPrefix) => {
+function processCSV(filePath, category, idPrefix) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const rows = parseCSVRows(content);
-
+  
   const members = [];
-
-  // Skip header (first row)
+  // row 0 is header
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     const rawId = r[0] ? r[0].trim() : '';
@@ -64,41 +63,34 @@ const parseCSV = (filePath, category, idPrefix) => {
     const address = r[4] ? r[4].trim() : '';
 
     if (name && rawId && !isNaN(parseInt(rawId, 10))) {
+      const id = `${idPrefix}-${parseInt(rawId, 10)}`;
       members.push({
-        id: `${idPrefix}-${parseInt(rawId, 10)}`,
-        name: name,
-        phone: phone,
-        address: address,
-        category: category,
+        id,
+        name,
+        phone,
+        category,
         initialSeatCode: seat,
-        status: "active",
-        createdAt: new Date().toISOString()
+        address: address,
+        status: "active"
       });
+    } else if (name && name !== 'SINGLE') {
+      // Special row without ID or single
+      console.log(`Special row without numeric ID in ${category}:`, r);
     }
   }
-
   return members;
-};
+}
 
-const deluxeMembers = parseCSV(path.join(__dirname, 'members', 'Delux.csv'), 'Deluxe', 'D');
-const premiumMembers = parseCSV(path.join(__dirname, 'members', 'Premium.csv'), 'Premium', 'P');
+const deluxe = processCSV(path.join(__dirname, 'members', 'Delux.csv'), 'Deluxe', 'D');
+const premium = processCSV(path.join(__dirname, 'members', 'Premium.csv'), 'Premium', 'P');
 
-// Assign initialSeatIndex and currentSeatIndex based on their order
-const processMembers = (categoryMembers) => {
-  return categoryMembers.map((m, index) => {
-    return {
-      ...m,
-      initialSeatIndex: index,
-      currentSeatIndex: index
-    };
-  });
-};
+console.log(`Parsed ${deluxe.length} Deluxe members`);
+console.log(`Parsed ${premium.length} Premium members`);
+console.log(`Total parsed: ${deluxe.length + premium.length}`);
 
-const finalDeluxe = processMembers(deluxeMembers);
-const finalPremium = processMembers(premiumMembers);
-const finalMembers = [...finalDeluxe, ...finalPremium];
+// Check empty addresses
+const deluxeEmpty = deluxe.filter(m => !m.address);
+const premiumEmpty = premium.filter(m => !m.address);
 
-const outputContent = `export const REAL_MEMBERS = ${JSON.stringify(finalMembers, null, 2)};\n`;
-
-fs.writeFileSync(path.join(__dirname, 'src', 'real-members.js'), outputContent);
-console.log(`Successfully generated src/real-members.js with ${finalMembers.length} members with addresses.`);
+console.log(`Deluxe with empty address: ${deluxeEmpty.length}`, deluxeEmpty.map(m => m.name));
+console.log(`Premium with empty address: ${premiumEmpty.length}`, premiumEmpty.map(m => m.name));
