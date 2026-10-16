@@ -37,7 +37,7 @@ import { buildSeatStructure, computePreview } from "./lib/rotation-engine";
 import seatIcon from "./assets/icon.png";
 
 
-/*  Small presentational helpers                                       */
+/*  Small presentational helpers */
 
 
 const CAT_STYLES = {
