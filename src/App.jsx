@@ -38,7 +38,6 @@ import ActivityMiniCalendar from "./components/ActivityMiniCalendar";
 import seatIcon from "./assets/icon.png";
 
 
-/*  Small presentational helpers */
 
 
 const CAT_STYLES = {
