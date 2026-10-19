@@ -34,6 +34,7 @@ import {
 } from "./lib/data-service";
 
 import { buildSeatStructure, computePreview } from "./lib/rotation-engine";
+import ActivityMiniCalendar from "./components/ActivityMiniCalendar";
 import seatIcon from "./assets/icon.png";
 
 
@@ -506,13 +507,24 @@ export default function App() {
               {NAV.find((n) => n.key === page)?.label}
             </h1>
           </div>
-          {lastEvent && (
-            <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-400 shrink-0">
-              <CalendarDays size={14} className="shrink-0 text-slate-400" />
-              <span className="hidden sm:inline">Last activity: {lastEvent.eventName} · {lastEvent.eventDate}</span>
-              <span className="sm:hidden truncate max-w-[120px] text-[11px]">{lastEvent.eventName}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-400 shrink-0">
+            <ActivityMiniCalendar
+              events={events}
+              lastEvent={lastEvent}
+              onSelectEvent={(ev) => {
+                setSelectedEventId(ev.id);
+                setPage("seatmap");
+              }}
+            />
+            {lastEvent ? (
+              <>
+                <span className="hidden sm:inline">Last activity: {lastEvent.eventName} · {lastEvent.eventDate}</span>
+                <span className="sm:hidden truncate max-w-[120px] text-[11px]">{lastEvent.eventName}</span>
+              </>
+            ) : (
+              <span className="hidden sm:inline text-slate-400">Activity Calendar</span>
+            )}
+          </div>
         </header>
 
         <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-6xl w-full mx-auto">
