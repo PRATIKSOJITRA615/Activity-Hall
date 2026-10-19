@@ -255,6 +255,7 @@ export function computePreview(members, isFirstEvent, structures) {
     }
 
     // Step 5: Fill any remaining unassigned members into open slots in active rows (0..N-1)
+
     if (unassignedMembers.length > 0) {
       for (let r = 0; r < activeNumRows && unassignedMembers.length > 0; r++) {
         const rowSlots = availableRowSlots[r];
