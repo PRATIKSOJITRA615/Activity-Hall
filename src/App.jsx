@@ -1078,9 +1078,7 @@ function HallDiagram({ structures, seatOccupant }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
 /*  Modals                                                              */
-/* ------------------------------------------------------------------ */
 
 function ModalShell({ children, onClose, wide }) {
   return (
