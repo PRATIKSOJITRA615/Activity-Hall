@@ -704,7 +704,7 @@ function QuickAction({ icon: Icon, title, desc, cta, onClick }) {
 }
 
 
-/*  Members page */
+/* Members page*/
 
 
 function MembersPage({
