@@ -33,17 +33,17 @@ export function buildSeatStructure(category) {
   return { flat, rows, total: flat.length };
 }
 
-/**
- * Determines if a seat index in a row is considered a Corner seat (outer ~25% edges)
- * or a Center seat (middle ~50%).
+/*
+  Determines if a seat index in a row is considered a Corner seat (outer ~25% edges)
+  or a Center seat (middle ~50%).
  */
 export function isSeatCorner(seatInRow, rowLen) {
   const cutoff = Math.max(1, Math.floor(rowLen * 0.25));
   return seatInRow < cutoff || seatInRow >= rowLen - cutoff;
 }
 
-/**
- * Extracts row, column index, and zone (corner vs center) for a flat index.
+/*
+  Extracts row, column index, and zone (corner vs center) for a flat index.
  */
 export function getSeatInfo(flatIndex, struct) {
   let offset = 0;
