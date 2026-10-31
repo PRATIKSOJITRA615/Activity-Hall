@@ -79,9 +79,8 @@ export function getSeatInfo(flatIndex, struct) {
   };
 }
 
-/**
- * Utility: Fisher-Yates array shuffle for fair random allocation.
- */
+/* Utility: Fisher-Yates array shuffle for fair random allocation.*/
+
 function shuffleArray(arr) {
   const shuffled = [...arr];
   for (let i = shuffled.length - 1; i > 0; i--) {
