@@ -64,7 +64,7 @@ export const saveEventAndAssignments = async (newEvent, assignmentsList, updated
   await setDoc(assignmentsRef, { list: assignmentsList });
 
   //  3. Update all affected members with their new seat index
-  // We can do this with Promise.all to update them quickly
+  /* We can do this with Promise.all to update them quickly */
   const updates = updatedMembers.map((m) => {
     const mRef = doc(db, "members", m.id);
     return updateDoc(mRef, { currentSeatIndex: m.currentSeatIndex });
