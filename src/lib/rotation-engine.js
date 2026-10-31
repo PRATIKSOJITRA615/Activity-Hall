@@ -1,4 +1,4 @@
-/*  Seat geometry — mirrors the physical hall layout */
+/*  Seat geometry - mirrors the physical hall layout */
 
 export const HALL_ROWS = {
   Deluxe: [
@@ -6,7 +6,7 @@ export const HALL_ROWS = {
     ["C", 36], // 18 pairs (C1-2 to C35-36)
     ["D", 38], // 19 pairs (D1-2 to D37-38)
     ["E", 40], // 20 pairs (E1-2 to E39-40)
-    ["F", 42], // 21 pairs (F1-2 to F41-42) - Reserved for new members
+    ["F", 42], // 21 pairs (F1-2 to F41-42) - Reserved for new members.
   ],
   Premium: [
     ["G", 44], // 22 pairs (G1-2 to G43-44)
