@@ -13,7 +13,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top Navigation  */}
+
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
