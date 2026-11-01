@@ -10,11 +10,11 @@ function parseCSVRows(text) {
   let row = [];
   let field = '';
   let inQuotes = false;
-  
+
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
     const nextChar = text[i + 1];
-    
+
     if (char === '"') {
       if (inQuotes && nextChar === '"') {
         field += '"';
@@ -51,7 +51,7 @@ function parseCSVRows(text) {
 function processCSV(filePath, category, idPrefix) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const rows = parseCSVRows(content);
-  
+
   const members = [];
   // row 0 is header
   for (let i = 1; i < rows.length; i++) {
@@ -74,7 +74,7 @@ function processCSV(filePath, category, idPrefix) {
         status: "active"
       });
     } else if (name && name !== 'SINGLE') {
-      // Special row without ID or single
+
       console.log(`Special row without numeric ID in ${category}:`, r);
     }
   }
