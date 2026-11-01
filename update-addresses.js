@@ -11,7 +11,7 @@ async function updateAddresses() {
   for (const member of REAL_MEMBERS) {
     try {
       const docRef = doc(db, 'members', member.id);
-      // Merge only the address field to avoid disrupting existing rotation state or status
+
       await setDoc(docRef, { address: member.address || '' }, { merge: true });
       updated++;
       if (updated % 25 === 0 || updated === REAL_MEMBERS.length) {
