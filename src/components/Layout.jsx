@@ -53,7 +53,7 @@ const Layout = () => {
         </div>
       </header>
 
-      {/* Main Content Area  */}
+
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-500">
         <Outlet />
       </main>
