@@ -821,9 +821,9 @@ function MembersPage({
   );
 }
 
-/* ------------------------------------------------------------------ */
+
 /*  Activities page                                                     */
-/* ------------------------------------------------------------------ */
+
 
 function ActivitiesPage({ events, assignments, onGenerate, onView, onExport, onDelete }) {
   const sorted = [...events].sort((a, b) => b.eventNumber - a.eventNumber);
